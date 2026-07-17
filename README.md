@@ -87,10 +87,14 @@ docker compose up -d --build
 En la máquina donde corre Ollama, permite conexiones desde la red:
 
 ```bash
-# Windows (PowerShell): variable de entorno del servicio
+# Windows (PowerShell): variable de entorno + reiniciar la app de Ollama
 setx OLLAMA_HOST 0.0.0.0
-ollama pull llama3.2:3b
 ```
+
+Usa en `OLLAMA_MODEL` un modelo que ya tengas (`ollama list`); para resúmenes en
+español funcionan bien `qwen2.5-coder:7b` (ligero) o `gemma4:latest` (mejor prosa,
+necesita ~7 GB de RAM libre). En el `.env` de la Pi, `OLLAMA_BASE_URL` es la IP
+LAN de la PC con Ollama, p. ej. `http://192.168.1.50:11434`.
 
 Si la PC con Ollama está apagada, **la app funciona igual**: los artículos se leen sin TL;DR y los resúmenes pendientes se generan cuando vuelva a estar disponible (FE-03).
 

@@ -2,7 +2,8 @@ import { ConfigService } from '@nestjs/config';
 import { AiProvider, SummaryResult } from './ai-provider.interface';
 import { SUMMARY_SYSTEM_PROMPT } from './prompt';
 
-const TIMEOUT_MS = 30_000;
+// generoso: la primera petición de cada ciclo puede incluir la carga del modelo (~30 s)
+const TIMEOUT_MS = 60_000;
 
 interface OllamaChatResponse {
   message?: { content?: string };
