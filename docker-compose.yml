@@ -1,0 +1,20 @@
+services:
+  senal:
+    build: .
+    container_name: senal
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+    environment:
+      DATABASE_URL: "file:../data/senal.db"
+      AI_PROVIDER: "${AI_PROVIDER:-ollama}"
+      OLLAMA_BASE_URL: "${OLLAMA_BASE_URL:-http://192.168.1.100:11434}"
+      OLLAMA_MODEL: "${OLLAMA_MODEL:-llama3.2:3b}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      INGEST_CRON: "${INGEST_CRON:-0 */30 * * * *}"
+      AI_DAILY_BUDGET: "${AI_DAILY_BUDGET:-60}"
+      RETENTION_DAYS: "${RETENTION_DAYS:-30}"
+      API_KEY: "${API_KEY:-}"
+      PORT: "3001"

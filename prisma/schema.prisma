@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Folder {
+  id        String @id @default(cuid())
+  key       String @unique // ai | dev | sql | sec
+  label     String
+  sortOrder Int    @default(0)
+  feeds     Feed[]
+}
+
+model Feed {
+  id              String    @id @default(cuid())
+  url             String    @unique
+  title           String
+  siteUrl         String?
+  folder          Folder    @relation(fields: [folderId], references: [id])
+  folderId        String
+  active          Boolean   @default(true)
+  lastFetchedAt   DateTime?
+  lastFetchStatus String? // ok | error
+  lastError       String?
+  errorStreak     Int       @default(0) // ciclos consecutivos fallidos (RO-3)
+  createdAt       DateTime  @default(now())
+  articles        Article[]
+}
+
+model Article {
+  id            String    @id @default(cuid())
+  feed          Feed      @relation(fields: [feedId], references: [id], onDelete: Cascade)
+  feedId        String
+  guid          String // guid del feed o sha256(link) — RN-01
+  link          String
+  title         String
+  author        String?
+  excerpt       String    @default("")
+  fullContent   String    @default("") // HTML sanitizado
+  contentStatus String    @default("partial") // full | partial
+  imageUrl      String?
+  publishedAt   DateTime?
+  fetchedAt     DateTime  @default(now())
+  tldr          String?
+  tldrStatus    String    @default("pending") // pending | done | failed | skipped
+  tldrAt        DateTime? // cuándo se generó — usado para el presupuesto diario (RN-05)
+  isRead        Boolean   @default(false)
+  readAt        DateTime?
+  isStarred     Boolean   @default(false)
+  starredAt     DateTime?
+  userId        String? // reservado para multiusuario futuro (RN-08)
+
+  @@unique([feedId, guid]) // RN-01
+  @@index([isRead])
+  @@index([isStarred])
+  @@index([publishedAt])
+  @@index([tldrStatus])
+}
+
+model Mute {
+  id        String   @id @default(cuid())
+  term      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model UserPref {
+  id        String   @id @default("singleton") // fila única en v1
+  theme     String   @default("light")
+  updatedAt DateTime @updatedAt
+}
+
+model IngestLog {
+  id           String   @id @default(cuid())
+  startedAt    DateTime @default(now())
+  finishedAt   DateTime?
+  feedsFetched Int
+  newArticles  Int
+  summarized   Int
+  errors       Int
+  tokensUsed   Int?
+}

@@ -1,0 +1,27 @@
+{
+  "name": "senal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Señal — lector RSS personal con contenido completo y TL;DR IA",
+  "scripts": {
+    "dev": "pnpm --filter api dev",
+    "build": "pnpm --filter web build && pnpm --filter api build",
+    "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:generate": "prisma generate --schema prisma/schema.prisma"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma",
+    "seed": "tsx prisma/seed.ts"
+  },
+  "packageManager": "pnpm@11.3.0",
+  "devDependencies": {
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "prisma": "^6.19.3"
+  }
+}
