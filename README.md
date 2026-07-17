@@ -19,14 +19,52 @@ pnpm --filter web dev            # (opcional) Vite dev server con HMR en :5173
 
 Disparar ingesta manual: `POST http://localhost:3001/api/ingest` (o botón "Actualizar" en la UI).
 
-## Deploy en la Raspberry Pi 4B (Docker)
+## Deploy en la Raspberry Pi 4B (pm2 — recomendado)
+
+Sin overhead de Docker (~100 MB menos de RAM). Requisitos en la Pi: Node 22 LTS,
+pnpm (`corepack enable`) y pm2 (`npm i -g pm2`).
+
+```bash
+# 1. Clona el repo
+git clone https://github.com/jipixz/RSS-Feed.git senal && cd senal
+
+# 2. Configura el entorno
+cp .env.example .env
+nano .env        # OLLAMA_BASE_URL=http://<IP-de-tu-PC>:11434, modelo, etc.
+
+# 3. Instala, compila y aplica migraciones
+pnpm install
+pnpm build                 # web (Vite) + api (Nest)
+pnpm prisma:deploy         # crea/actualiza data/senal.db (el seed corre solo al arrancar)
+
+# 4. Arranca con pm2
+pm2 start ecosystem.config.js
+pm2 save                   # sobrevive reinicios (con pm2 startup configurado)
+
+# 5. Listo — http://<IP-de-la-Pi>:3001 (o tu Cloudflare Tunnel apuntando a ese puerto)
+```
+
+Actualizar a una versión nueva:
+
+```bash
+git pull && pnpm install && pnpm build && pnpm prisma:deploy && pm2 restart senal
+```
+
+Consumo esperado en la Pi: ~100–150 MB en reposo, picos de 300–450 MB durante la
+ingesta (acotado por `--max-old-space-size=512` en `ecosystem.config.js`).
+
+> Si lo expones por Cloudflare Tunnel + Zero Trust, el acceso ya queda autenticado.
+> Para una capa extra puedes definir `API_KEY` en `.env` (los writes exigirán el
+> header `X-API-Key`; nota: la UI aún no manda ese header).
+
+## Deploy en la Raspberry Pi 4B (Docker, alternativa)
 
 Requisitos en la Pi: Raspberry Pi OS de 64 bits + Docker + plugin compose
 (`curl -fsSL https://get.docker.com | sh`).
 
 ```bash
-# 1. Copia el proyecto a la Pi (git clone o scp; no copies node_modules/ ni data/)
-git clone <tu-repo> senal && cd senal
+# 1. Clona el repo
+git clone https://github.com/jipixz/RSS-Feed.git senal && cd senal
 
 # 2. Configura el entorno
 cp .env.example .env
