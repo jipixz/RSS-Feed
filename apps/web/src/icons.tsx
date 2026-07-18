@@ -39,9 +39,9 @@ export const IcPlus = (p: IconProps) => (<svg {...I(p)}><path d="M12 5v14M5 12h1
 // Logo "Señal" — broadcast/onda, colores de marca
 export const LogoMark = ({ s = 26 }: IconProps) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-    <circle cx="12" cy="12" r="2.3" fill="#F79962" />
-    <path d="M8.6 8.6a4.8 4.8 0 0 0 0 6.8M15.4 8.6a4.8 4.8 0 0 1 0 6.8" stroke="#3BBEB4" strokeWidth={1.9} strokeLinecap="round" />
-    <path d="M5.8 5.8a8.8 8.8 0 0 0 0 12.4M18.2 5.8a8.8 8.8 0 0 1 0 12.4" stroke="#0082A6" strokeWidth={1.9} strokeLinecap="round" />
+    <circle cx="12" cy="12" r="2.3" fill="#e046ff" />
+    <path d="M8.6 8.6a4.8 4.8 0 0 0 0 6.8M15.4 8.6a4.8 4.8 0 0 1 0 6.8" stroke="#3995ff" strokeWidth={1.9} strokeLinecap="round" />
+    <path d="M5.8 5.8a8.8 8.8 0 0 0 0 12.4M18.2 5.8a8.8 8.8 0 0 1 0 12.4" stroke="#006bcf" strokeWidth={1.9} strokeLinecap="round" />
   </svg>
 );
 export const IcType = (p: IconProps) => (<svg {...I(p)}><path d="M4 7V5h16v2M9 20h6M12 5v15"/></svg>);

@@ -1,5 +1,5 @@
 // Señal — service worker: shell cacheado, API siempre por red
-const CACHE = 'senal-v2';
+const CACHE = 'senal-v3';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(['/'])));
