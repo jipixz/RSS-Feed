@@ -31,6 +31,24 @@ export class OllamaProvider implements AiProvider {
   }
 
   async summarize(title: string, text: string): Promise<SummaryResult> {
+    // think:false — modelos híbridos (gemma4, qwen3…) pueden gastar todo el
+    // num_predict en razonamiento y devolver content vacío si no se desactiva
+    const data =
+      (await this.chat(title, text, true)) ??
+      (await this.chat(title, text, false)) ?? // Ollama viejo sin soporte de `think`
+      (() => {
+        throw new Error('Ollama rechazó la petición');
+      })();
+    const tldr = data.message?.content?.trim();
+    if (!tldr) throw new Error('Ollama devolvió una respuesta vacía');
+    return {
+      tldr,
+      tokensUsed: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0) || null,
+    };
+  }
+
+  /** Devuelve null si el servidor rechazó el parámetro `think` (retry sin él). */
+  private async chat(title: string, text: string, withThink: boolean): Promise<OllamaChatResponse | null> {
     const res = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST',
       signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -38,7 +56,8 @@ export class OllamaProvider implements AiProvider {
       body: JSON.stringify({
         model: this.model,
         stream: false,
-        options: { temperature: 0.3, num_predict: 160 },
+        ...(withThink ? { think: false } : {}),
+        options: { temperature: 0.3, num_predict: 200 },
         messages: [
           { role: 'system', content: SUMMARY_SYSTEM_PROMPT },
           { role: 'user', content: `Título: ${title}\n\nArtículo:\n${text}` },
@@ -46,14 +65,10 @@ export class OllamaProvider implements AiProvider {
       }),
     });
     if (!res.ok) {
-      throw new Error(`Ollama respondió ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      const body = (await res.text()).slice(0, 200);
+      if (withThink && res.status === 400 && body.includes('think')) return null;
+      throw new Error(`Ollama respondió ${res.status}: ${body}`);
     }
-    const data = (await res.json()) as OllamaChatResponse;
-    const tldr = data.message?.content?.trim();
-    if (!tldr) throw new Error('Ollama devolvió una respuesta vacía');
-    return {
-      tldr,
-      tokensUsed: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0) || null,
-    };
+    return (await res.json()) as OllamaChatResponse;
   }
 }
