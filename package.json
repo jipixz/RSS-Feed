@@ -4,7 +4,9 @@
   "private": true,
   "description": "Señal — lector RSS personal con contenido completo y TL;DR IA",
   "scripts": {
-    "dev": "pnpm --filter api dev",
+    "dev": "pnpm --parallel --filter api --filter web dev",
+    "dev:api": "pnpm --filter api dev",
+    "dev:web": "pnpm --filter web dev",
     "build": "pnpm --filter web build && pnpm --filter api build",
     "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
