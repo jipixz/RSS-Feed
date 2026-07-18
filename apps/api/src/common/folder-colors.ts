@@ -1,13 +1,14 @@
-// Color de la fuente derivado de la carpeta (design tokens de Señal)
+// Color de la fuente derivado de la carpeta — familia de marca (azul→morado),
+// con sec en rosa-rojo para que "seguridad" siga leyéndose como alerta.
 const FOLDER_DOT: Record<string, string> = {
-  ai: '#0082A6', // brand.blue
-  dev: '#3BBEB4', // brand.teal
-  sql: '#F79962', // coral.300
-  sec: '#D43F0E', // coral.600
+  ai: '#0084ff', // brand.blue
+  dev: '#31adff', // brand.teal (azul claro)
+  sql: '#e872ff', // brand.coral (morado)
+  sec: '#ff5470', // alerta
 };
 
 // Paleta para carpetas creadas por el usuario — estable por hash del key
-const EXTRA_PALETTE = ['#4FBFD9', '#196C69', '#6BD2C6', '#005674', '#D97706', '#7C6FD9'];
+const EXTRA_PALETTE = ['#5CBEFF', '#0068d6', '#b366ff', '#00b0d6', '#ff5470', '#8a7cff'];
 
 export function dotColorFor(folderKey: string): string {
   const known = FOLDER_DOT[folderKey];

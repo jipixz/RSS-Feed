@@ -536,7 +536,7 @@ export default function App() {
     return (
       <div key={a.id} style={{ position: 'relative', overflow: 'hidden', borderBottom: `1px solid ${t.borderSubtle}` }}>
         {dx !== 0 && actionFor !== 'none' && (
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: dx > 0 ? 'flex-start' : 'flex-end', padding: '0 20px', background: actionFor === 'read' ? 'rgba(59,190,180,0.18)' : 'rgba(247,153,98,0.18)', color: actionFor === 'read' ? SN.brand.teal : SN.brand.coral }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: dx > 0 ? 'flex-start' : 'flex-end', padding: '0 20px', background: actionFor === 'read' ? 'rgba(49,173,255,0.18)' : 'rgba(232,114,255,0.18)', color: actionFor === 'read' ? SN.brand.teal : SN.brand.coral }}>
             {actionFor === 'read' ? <IcCheck s={20} /> : <IcStarF s={20} />}
           </div>
         )}
