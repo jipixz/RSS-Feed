@@ -10,6 +10,7 @@ import { SUMMARY_SYSTEM_PROMPT } from './prompt';
  */
 export class AnthropicProvider implements AiProvider {
   readonly name = 'anthropic';
+  readonly modelLabel = 'claude-haiku-4-5';
   private readonly client: Anthropic | null;
 
   constructor(config: ConfigService) {

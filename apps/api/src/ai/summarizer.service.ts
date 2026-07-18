@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { SanitizerService } from '../content/sanitizer.service';
 import { AI_PROVIDER, AiProvider } from './provider/ai-provider.interface';
+import { AiEventsService } from './ai-events.service';
 
 const MAX_INPUT_CHARS = 8_000; // ~2000 tokens (Anexo B)
 
@@ -27,6 +28,7 @@ export class SummarizerService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly sanitizer: SanitizerService,
+    private readonly events: AiEventsService,
     @Inject(AI_PROVIDER) private readonly provider: AiProvider,
   ) {}
 
@@ -66,9 +68,10 @@ export class SummarizerService {
       where: { tldrStatus: 'pending' },
       orderBy: { publishedAt: 'desc' },
       take: remaining,
-      select: { id: true, title: true, fullContent: true, excerpt: true },
+      select: { id: true, title: true, fullContent: true, excerpt: true, feed: { select: { title: true } } },
     });
 
+    const model = this.provider.modelLabel;
     for (const article of pending) {
       const text = this.sanitizer
         .toText(article.fullContent || article.excerpt)
@@ -80,6 +83,16 @@ export class SummarizerService {
         });
         continue;
       }
+      this.events.emit({
+        type: 'start',
+        id: article.id,
+        title: article.title,
+        source: article.feed.title,
+        model,
+        promptPreview: text.slice(0, 280),
+        at: new Date().toISOString(),
+      });
+      const startedAt = Date.now();
       try {
         const { tldr, tokensUsed } = await this.provider.summarize(article.title, text);
         await this.prisma.article.update({
@@ -89,6 +102,15 @@ export class SummarizerService {
         result.summarized += 1;
         result.tokensUsed += tokensUsed ?? 0;
         remaining -= 1;
+        this.events.emit({
+          type: 'done',
+          id: article.id,
+          title: article.title,
+          tldr,
+          tokens: tokensUsed,
+          ms: Date.now() - startedAt,
+          at: new Date().toISOString(),
+        });
         if (remaining <= 0) {
           result.budgetExhausted = true;
           break;
@@ -96,7 +118,9 @@ export class SummarizerService {
       } catch (err) {
         // FE-03: no bloquea — queda pending y se reintenta el próximo ciclo
         result.failed += 1;
-        this.logger.warn(`TL;DR falló para "${article.title}": ${(err as Error).message}`);
+        const message = (err as Error).message;
+        this.logger.warn(`TL;DR falló para "${article.title}": ${message}`);
+        this.events.emit({ type: 'error', id: article.id, title: article.title, message, at: new Date().toISOString() });
         // Si el proveedor no responde (p. ej. la PC con Ollama está apagada),
         // no tiene caso seguir martillando en este ciclo.
         if (result.failed >= 3 && result.summarized === 0) {
@@ -106,6 +130,13 @@ export class SummarizerService {
       }
     }
 
+    this.events.emit({
+      type: 'cycle',
+      summarized: result.summarized,
+      failed: result.failed,
+      budgetLeft: Math.max(0, remaining),
+      at: new Date().toISOString(),
+    });
     return result;
   }
 

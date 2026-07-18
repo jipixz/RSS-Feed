@@ -12,6 +12,8 @@ export interface SummaryResult {
  */
 export interface AiProvider {
   readonly name: string;
+  /** Etiqueta del modelo para la consola (p. ej. "gemma4:latest"). */
+  readonly modelLabel: string;
   /** Genera un TL;DR en español (1–2 frases). Lanza error si el proveedor falla. */
   summarize(title: string, text: string): Promise<SummaryResult>;
   /** false → el pipeline marca los artículos como 'skipped' sin llamar a nada. */

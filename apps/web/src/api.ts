@@ -124,6 +124,9 @@ export const api = {
   digest(hours = 24): Promise<{ items: DigestItem[]; interests: string[] }> {
     return request(`/api/digest?hours=${hours}`);
   },
+  aiInfo(): Promise<{ provider: string; model: string; enabled: boolean; systemPrompt: string }> {
+    return request('/api/ai/info');
+  },
   importOpml(opml: string): Promise<{ folders: number; feeds: number; skipped: number }> {
     return request('/api/opml/import', { method: 'POST', body: JSON.stringify({ opml }) });
   },

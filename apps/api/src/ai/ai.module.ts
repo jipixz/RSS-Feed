@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ContentModule } from '../content/content.module';
 import { SummarizerService } from './summarizer.service';
-import { AI_PROVIDER } from './provider/ai-provider.interface';
+import { AiEventsService } from './ai-events.service';
+import { AiController } from './ai.controller';
 import { aiProviderFactory } from './provider/ai-provider.factory';
 
 @Module({
   imports: [ContentModule],
-  providers: [SummarizerService, aiProviderFactory],
+  controllers: [AiController],
+  providers: [SummarizerService, AiEventsService, aiProviderFactory],
   exports: [SummarizerService],
 })
 export class AiModule {}

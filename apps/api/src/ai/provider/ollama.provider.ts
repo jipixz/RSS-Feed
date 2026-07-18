@@ -22,6 +22,10 @@ export class OllamaProvider implements AiProvider {
     this.model = config.get<string>('OLLAMA_MODEL') ?? 'llama3.2:3b';
   }
 
+  get modelLabel(): string {
+    return this.model;
+  }
+
   describe(): string {
     return `${this.baseUrl} · ${this.model}`;
   }

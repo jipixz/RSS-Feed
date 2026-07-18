@@ -2,11 +2,12 @@ import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from
 import DOMPurify from 'dompurify';
 import { SN, THEMES, THEME_LABELS, ThemeKey } from './tokens';
 import {
-  IcBack, IcCheck, IcCircle, IcCode, IcCpu, IcDb, IcExt, IcFilter, IcGear, IcInbox,
+  IcActivity, IcBack, IcCheck, IcCircle, IcCode, IcCpu, IcDb, IcExt, IcFilter, IcGear, IcInbox,
   IcPalette, IcRefresh, IcSearch, IcShield, IcSpark, IcStar, IcStarF, IcTag, IcType, IcX, LogoMark,
 } from './icons';
 import { api, ArticleDetail, ArticleListItem, DigestItem, FeedInfo, Folder, timeAgo } from './api';
 import { SettingsModal } from './SettingsModal';
+import { LiveConsole } from './LiveConsole';
 import {
   GesturePrefs, READING_SIZES, ReadingPrefs, loadGestures, loadReading, saveGestures, saveReading,
 } from './local-prefs';
@@ -73,6 +74,7 @@ export default function App() {
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [readMenuOpen, setReadMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showConsole, setShowConsole] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [barsHidden, setBarsHidden] = useState(false);
 
@@ -371,6 +373,7 @@ export default function App() {
             <IcCheck s={15} />Marcar todo leído
           </button>
         )}
+        <button className="sn-iconbtn" style={iconBtn} onClick={() => setShowConsole(true)} title="Consola IA en vivo"><IcActivity s={17} /></button>
         <button className="sn-iconbtn" style={iconBtn} onClick={() => setShowSettings(true)} title="Ajustes"><IcGear s={17} /></button>
         <button className="sn-iconbtn" style={iconBtn} onClick={() => { setThemeMenuOpen((v) => !v); setReadMenuOpen(false); }} title="Tema"><IcPalette s={17} /></button>
         {themeMenu}
@@ -828,6 +831,8 @@ export default function App() {
           }}
         />
       )}
+
+      {showConsole && <LiveConsole t={t} phone={phone} onClose={() => setShowConsole(false)} />}
     </>
   );
 }

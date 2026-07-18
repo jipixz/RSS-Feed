@@ -45,6 +45,7 @@ export const LogoMark = ({ s = 26 }: IconProps) => (
   </svg>
 );
 export const IcType = (p: IconProps) => (<svg {...I(p)}><path d="M4 7V5h16v2M9 20h6M12 5v15"/></svg>);
+export const IcActivity = (p: IconProps) => (<svg {...I(p)}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>);
 export const IcDownload = (p: IconProps) => (<svg {...I(p)}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>);
 export const IcUpload = (p: IconProps) => (<svg {...I(p)}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>);
 export const IcPalette = (p: IconProps) => (<svg {...I(p)}><circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.68-.75 1.68-1.68 0-.44-.16-.84-.44-1.15-.27-.3-.43-.7-.43-1.13a1.68 1.68 0 0 1 1.68-1.68h1.99A5.52 5.52 0 0 0 22 10.85C22 5.95 17.5 2 12 2z"/></svg>);
