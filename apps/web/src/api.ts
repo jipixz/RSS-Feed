@@ -12,6 +12,11 @@ export interface ArticleListItem {
   publishedAt: string;
   isRead: boolean;
   isStarred: boolean;
+  readingMinutes: number | null;
+}
+
+export interface DigestItem extends ArticleListItem {
+  score: number;
 }
 
 export interface ArticleDetail extends ArticleListItem {
@@ -107,11 +112,20 @@ export const api = {
   removeMute(term: string): Promise<string[]> {
     return request(`/api/mutes/${encodeURIComponent(term)}`, { method: 'DELETE' });
   },
-  getPrefs(): Promise<{ theme: ThemeKey }> {
+  getPrefs(): Promise<{ theme: ThemeKey; interests: string[] }> {
     return request('/api/prefs');
   },
   setTheme(theme: ThemeKey): Promise<{ theme: ThemeKey }> {
     return request('/api/prefs', { method: 'PATCH', body: JSON.stringify({ theme }) });
+  },
+  setInterests(interests: string[]): Promise<{ theme: ThemeKey; interests: string[] }> {
+    return request('/api/prefs', { method: 'PATCH', body: JSON.stringify({ interests }) });
+  },
+  digest(hours = 24): Promise<{ items: DigestItem[]; interests: string[] }> {
+    return request(`/api/digest?hours=${hours}`);
+  },
+  importOpml(opml: string): Promise<{ folders: number; feeds: number; skipped: number }> {
+    return request('/api/opml/import', { method: 'POST', body: JSON.stringify({ opml }) });
   },
   feeds(): Promise<FeedInfo[]> {
     return request('/api/feeds');

@@ -17,7 +17,8 @@ export const SN = {
   },
   font: {
     title: "'Open Sans', sans-serif",
-    body: "'Roboto', sans-serif",
+    body: "'Open Sans', sans-serif",
+    serif: "Georgia, 'Times New Roman', serif",
     mono: "'JetBrains Mono', monospace",
   },
 } as const;

@@ -37,6 +37,9 @@ export class BootstrapService implements OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
 
   async onModuleInit() {
+    // Backfill v2: calcular wordCount de artículos previos (una sola vez, en background)
+    void this.backfillWordCounts();
+
     const folderCount = await this.prisma.folder.count();
     if (folderCount > 0) return;
 
@@ -57,5 +60,32 @@ export class BootstrapService implements OnModuleInit {
       create: { id: 'singleton', theme: 'light' },
     });
     this.logger.log(`Seed listo: ${FOLDERS.length} carpetas, ${FEEDS.length} feeds`);
+  }
+
+  private async backfillWordCounts() {
+    const total = await this.prisma.article.count({ where: { wordCount: null } });
+    if (total === 0) return;
+    this.logger.log(`Backfill de wordCount: ${total} artículos`);
+    let done = 0;
+    for (;;) {
+      const batch = await this.prisma.article.findMany({
+        where: { wordCount: null },
+        take: 100,
+        select: { id: true, fullContent: true, excerpt: true },
+      });
+      if (batch.length === 0) break;
+      for (const a of batch) {
+        const text = (a.fullContent || a.excerpt || '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        await this.prisma.article.update({
+          where: { id: a.id },
+          data: { wordCount: text ? text.split(' ').length : 0 },
+        });
+      }
+      done += batch.length;
+    }
+    this.logger.log(`Backfill de wordCount completado: ${done} artículos`);
   }
 }

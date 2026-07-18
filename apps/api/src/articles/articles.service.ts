@@ -15,8 +15,15 @@ const listSelect = {
   isRead: true,
   isStarred: true,
   imageUrl: true,
+  wordCount: true,
   feed: { select: { title: true, folder: { select: { key: true } } } },
 } satisfies Prisma.ArticleSelect;
+
+/** ~220 palabras por minuto de lectura. */
+export function readingMinutes(wordCount: number | null): number | null {
+  if (!wordCount || wordCount < 50) return null;
+  return Math.max(1, Math.round(wordCount / 220));
+}
 
 type ListRow = Prisma.ArticleGetPayload<{ select: typeof listSelect }>;
 
@@ -32,6 +39,7 @@ export interface ArticleListItem {
   publishedAt: string;
   isRead: boolean;
   isStarred: boolean;
+  readingMinutes: number | null;
 }
 
 @Injectable()
@@ -157,6 +165,7 @@ export class ArticlesService {
       publishedAt: (row.publishedAt ?? row.fetchedAt).toISOString(),
       isRead: row.isRead,
       isStarred: row.isStarred,
+      readingMinutes: readingMinutes(row.wordCount),
     };
   }
 }

@@ -204,6 +204,8 @@ export class IngestService {
       .slice(0, EXCERPT_MAX_CHARS);
 
     const publishedAt = this.parseDate(item.isoDate ?? item.pubDate);
+    const finalText = contentStatus === 'full' ? this.sanitizer.toText(fullContent) : feedText;
+    const wordCount = finalText ? finalText.split(/\s+/).length : 0;
 
     await this.prisma.article.create({
       data: {
@@ -217,6 +219,7 @@ export class IngestService {
         contentStatus,
         imageUrl,
         publishedAt,
+        wordCount,
         tldrStatus: 'pending',
       },
     });

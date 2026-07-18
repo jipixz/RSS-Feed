@@ -48,6 +48,7 @@ model Article {
   tldr          String?
   tldrStatus    String    @default("pending") // pending | done | failed | skipped
   tldrAt        DateTime? // cuándo se generó — usado para el presupuesto diario (RN-05)
+  wordCount     Int? // palabras del texto plano — para tiempo de lectura estimado
   isRead        Boolean   @default(false)
   readAt        DateTime?
   isStarred     Boolean   @default(false)
@@ -70,6 +71,7 @@ model Mute {
 model UserPref {
   id        String   @id @default("singleton") // fila única en v1
   theme     String   @default("light")
+  interests String? // JSON array de términos de interés — ranking de la vista "Hoy"
   updatedAt DateTime @updatedAt
 }
 

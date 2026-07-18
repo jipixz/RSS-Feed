@@ -36,4 +36,15 @@ export const IcGear = (p: IconProps) => (<svg {...I(p)}><circle cx="12" cy="12" 
 export const IcTag = (p: IconProps) => (<svg {...I(p)}><path d="M20.59 13.41 12 22 2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.5"/></svg>);
 export const IcTrash = (p: IconProps) => (<svg {...I(p)}><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>);
 export const IcPlus = (p: IconProps) => (<svg {...I(p)}><path d="M12 5v14M5 12h14"/></svg>);
+// Logo "Señal" — broadcast/onda, colores de marca
+export const LogoMark = ({ s = 26 }: IconProps) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+    <circle cx="12" cy="12" r="2.3" fill="#F79962" />
+    <path d="M8.6 8.6a4.8 4.8 0 0 0 0 6.8M15.4 8.6a4.8 4.8 0 0 1 0 6.8" stroke="#3BBEB4" strokeWidth={1.9} strokeLinecap="round" />
+    <path d="M5.8 5.8a8.8 8.8 0 0 0 0 12.4M18.2 5.8a8.8 8.8 0 0 1 0 12.4" stroke="#0082A6" strokeWidth={1.9} strokeLinecap="round" />
+  </svg>
+);
+export const IcType = (p: IconProps) => (<svg {...I(p)}><path d="M4 7V5h16v2M9 20h6M12 5v15"/></svg>);
+export const IcDownload = (p: IconProps) => (<svg {...I(p)}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>);
+export const IcUpload = (p: IconProps) => (<svg {...I(p)}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>);
 export const IcPalette = (p: IconProps) => (<svg {...I(p)}><circle cx="13.5" cy="6.5" r="1"/><circle cx="17.5" cy="10.5" r="1"/><circle cx="8.5" cy="7.5" r="1"/><circle cx="6.5" cy="12.5" r="1"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.93 0 1.68-.75 1.68-1.68 0-.44-.16-.84-.44-1.15-.27-.3-.43-.7-.43-1.13a1.68 1.68 0 0 1 1.68-1.68h1.99A5.52 5.52 0 0 0 22 10.85C22 5.95 17.5 2 12 2z"/></svg>);

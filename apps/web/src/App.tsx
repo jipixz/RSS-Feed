@@ -3,17 +3,20 @@ import DOMPurify from 'dompurify';
 import { SN, THEMES, THEME_LABELS, ThemeKey } from './tokens';
 import {
   IcBack, IcCheck, IcCircle, IcCode, IcCpu, IcDb, IcExt, IcFilter, IcGear, IcInbox,
-  IcPalette, IcPlus, IcRefresh, IcSearch, IcShield, IcSpark, IcStar, IcStarF, IcTag, IcTrash, IcX,
+  IcPalette, IcRefresh, IcSearch, IcShield, IcSpark, IcStar, IcStarF, IcTag, IcType, IcX, LogoMark,
 } from './icons';
-import { api, ArticleDetail, ArticleListItem, FeedInfo, Folder, timeAgo } from './api';
+import { api, ArticleDetail, ArticleListItem, DigestItem, FeedInfo, Folder, timeAgo } from './api';
+import { SettingsModal } from './SettingsModal';
+import {
+  GesturePrefs, READING_SIZES, ReadingPrefs, loadGestures, loadReading, saveGestures, saveReading,
+} from './local-prefs';
 
 const FOLDER_ICONS: Record<string, (p: { s?: number }) => React.ReactElement> = {
-  ai: IcCpu,
-  dev: IcCode,
-  sql: IcDb,
-  sec: IcShield,
+  ai: IcCpu, dev: IcCode, sql: IcDb, sec: IcShield,
 };
 const iconFor = (key: string) => FOLDER_ICONS[key] ?? IcTag;
+
+const SWIPE_TRIGGER = 72;
 
 function useViewportWidth() {
   const [width, setWidth] = useState(() => window.innerWidth);
@@ -39,10 +42,11 @@ export default function App() {
 
   const width = useViewportWidth();
   const compact = width < 1100; // sin sidebar → chips
-  const phone = width < 700; // artículo como overlay a pantalla completa
+  const phone = width < 700; // artículo overlay + FAB + sheet
 
   const [folder, setFolder] = useState('all');
   const [saved, setSaved] = useState(false);
+  const [digestMode, setDigestMode] = useState(false);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -52,6 +56,9 @@ export default function App() {
   const [hiddenByMutes, setHiddenByMutes] = useState(0);
   const [loadingList, setLoadingList] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
+
+  const [digestItems, setDigestItems] = useState<DigestItem[]>([]);
+  const [loadingDigest, setLoadingDigest] = useState(false);
 
   const [folders, setFolders] = useState<Folder[]>([]);
   const [feeds, setFeeds] = useState<FeedInfo[]>([]);
@@ -64,9 +71,19 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
+  const [readMenuOpen, setReadMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [barsHidden, setBarsHidden] = useState(false);
+
+  const [reading, setReading] = useState<ReadingPrefs>(loadReading);
+  const [gestures, setGestures] = useState<GesturePrefs>(loadGestures);
+  const [swipe, setSwipe] = useState<{ id: string; dx: number } | null>(null);
+  const swipeRef = useRef<{ id: string; x: number; y: number; horizontal: boolean | null } | null>(null);
+  const edgeRef = useRef<number | null>(null);
 
   const articlePaneRef = useRef<HTMLElement | null>(null);
+  const lastScrollTop = useRef(0);
 
   // ── carga inicial ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -78,28 +95,18 @@ export default function App() {
   }, []);
 
   const refreshFolders = useCallback(async () => {
-    try {
-      setFolders(await api.folders());
-    } catch {
-      /* sidebar sin contadores no es fatal */
-    }
+    try { setFolders(await api.folders()); } catch { /* no fatal */ }
   }, []);
-
   const refreshFeeds = useCallback(async () => {
-    try {
-      setFeeds(await api.feeds());
-    } catch {
-      /* no fatal */
-    }
+    try { setFeeds(await api.feeds()); } catch { /* no fatal */ }
   }, []);
 
-  // ── búsqueda con debounce (ESC-08) ────────────────────────────────────────
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(handle);
   }, [search]);
 
-  // ── lista (ESC-04/07/08/09) ───────────────────────────────────────────────
+  // ── lista ─────────────────────────────────────────────────────────────────
   const listQuery = useMemo(
     () => ({ folder, saved, unreadOnly, search: debouncedSearch }),
     [folder, saved, unreadOnly, debouncedSearch],
@@ -114,17 +121,31 @@ export default function App() {
       setNextCursor(page.nextCursor);
       setHiddenByMutes(page.hiddenByMutes);
     } catch (err) {
-      setListError((err as Error).message); // FE-05
+      setListError((err as Error).message);
     } finally {
       setLoadingList(false);
     }
   }, [listQuery]);
 
   useEffect(() => {
-    void loadList(true);
-  }, [loadList]);
+    if (!digestMode) void loadList(true);
+  }, [loadList, digestMode]);
 
-  // ── abrir artículo = detalle + marcar leído (ESC-05/06) ───────────────────
+  const loadDigest = useCallback(async () => {
+    setLoadingDigest(true);
+    try {
+      const d = await api.digest(24);
+      setDigestItems(d.items);
+    } catch { /* mostrar vacío */ } finally {
+      setLoadingDigest(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (digestMode) void loadDigest();
+  }, [digestMode, loadDigest]);
+
+  // ── artículo ──────────────────────────────────────────────────────────────
   const open = useCallback(async (id: string) => {
     setSelectedId(id);
     setLoadingDetail(true);
@@ -135,6 +156,7 @@ export default function App() {
       setDetail(d);
       if (!d.isRead) {
         setItems((prev) => prev.map((a) => (a.id === id ? { ...a, isRead: true } : a)));
+        setDigestItems((prev) => prev.map((a) => (a.id === id ? { ...a, isRead: true } : a)));
         await api.setRead(id, true);
         void refreshFolders();
       }
@@ -152,6 +174,7 @@ export default function App() {
 
   const toggleRead = useCallback(async (id: string, read: boolean) => {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, isRead: read } : a)));
+    setDigestItems((prev) => prev.map((a) => (a.id === id ? { ...a, isRead: read } : a)));
     setDetail((d) => (d && d.id === id ? { ...d, isRead: read } : d));
     await api.setRead(id, read).catch(() => undefined);
     void refreshFolders();
@@ -159,17 +182,19 @@ export default function App() {
 
   const toggleStar = useCallback(async (id: string, starred: boolean) => {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, isStarred: starred } : a)));
+    setDigestItems((prev) => prev.map((a) => (a.id === id ? { ...a, isStarred: starred } : a)));
     setDetail((d) => (d && d.id === id ? { ...d, isStarred: starred } : d));
     await api.setStar(id, starred).catch(() => undefined);
   }, []);
 
   const markAllRead = useCallback(async () => {
-    await api.markAllRead(saved ? undefined : folder).catch(() => undefined);
+    await api.markAllRead(saved || digestMode ? undefined : folder).catch(() => undefined);
     setItems((prev) => prev.map((a) => ({ ...a, isRead: true })));
+    setDigestItems((prev) => prev.map((a) => ({ ...a, isRead: true })));
     void refreshFolders();
-  }, [folder, saved, refreshFolders]);
+  }, [folder, saved, digestMode, refreshFolders]);
 
-  // ── mutes (ESC-10) ────────────────────────────────────────────────────────
+  // ── mutes ─────────────────────────────────────────────────────────────────
   const addMute = useCallback(async () => {
     const term = muteInput.trim();
     setMuteInput('');
@@ -185,30 +210,76 @@ export default function App() {
     void refreshFolders();
   }, [mutes, loadList, refreshFolders]);
 
-  // ── tema (ESC-13) ─────────────────────────────────────────────────────────
+  // ── prefs ─────────────────────────────────────────────────────────────────
   const pickTheme = useCallback((key: ThemeKey) => {
     setTheme(key);
     setThemeMenuOpen(false);
     void api.setTheme(key).catch(() => undefined);
   }, []);
 
-  // ── refrescar (ingesta manual) ────────────────────────────────────────────
+  const updateReading = useCallback((next: ReadingPrefs) => {
+    setReading(next);
+    saveReading(next);
+  }, []);
+
+  const updateGestures = useCallback((next: GesturePrefs) => {
+    setGestures(next);
+    saveGestures(next);
+  }, []);
+
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await api.ingest();
-      await loadList(true);
+      if (digestMode) await loadDigest();
+      else await loadList(true);
       void refreshFolders();
-    } catch {
-      /* la ingesta puede tardar; el cron la completa */
-    } finally {
+    } catch { /* el cron completa */ } finally {
       setRefreshing(false);
     }
-  }, [loadList, refreshFolders]);
+  }, [loadList, loadDigest, digestMode, refreshFolders]);
+
+  // ── swipe en filas (móvil) ────────────────────────────────────────────────
+  const swipeAction = useCallback((id: string, dx: number) => {
+    const dir = dx > 0 ? 'right' : 'left';
+    const action = gestures[dir];
+    const item = items.find((a) => a.id === id) ?? digestItems.find((a) => a.id === id);
+    if (!item || action === 'none') return;
+    if (action === 'read') void toggleRead(id, !item.isRead);
+    else void toggleStar(id, !item.isStarred);
+  }, [gestures, items, digestItems, toggleRead, toggleStar]);
+
+  const rowTouch = phone ? {
+    onTouchStart: (id: string) => (e: React.TouchEvent) => {
+      const touch = e.touches[0];
+      swipeRef.current = { id, x: touch.clientX, y: touch.clientY, horizontal: null };
+    },
+    onTouchMove: (id: string) => (e: React.TouchEvent) => {
+      const s = swipeRef.current;
+      if (!s || s.id !== id) return;
+      const touch = e.touches[0];
+      const dx = touch.clientX - s.x;
+      const dy = touch.clientY - s.y;
+      if (s.horizontal === null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+        s.horizontal = Math.abs(dx) > Math.abs(dy);
+      }
+      if (s.horizontal) setSwipe({ id, dx: Math.max(-120, Math.min(120, dx)) });
+    },
+    onTouchEnd: (id: string) => () => {
+      const s = swipeRef.current;
+      const current = swipe;
+      swipeRef.current = null;
+      setSwipe(null);
+      if (s?.horizontal && current && current.id === id && Math.abs(current.dx) >= SWIPE_TRIGGER) {
+        swipeAction(id, current.dx);
+      }
+    },
+  } : null;
 
   const unreadTotal = useMemo(() => folders.reduce((acc, f) => acc + f.unreadCount, 0), [folders]);
-  const currentTitle = saved ? 'Guardados' : folder === 'all' ? 'Todos' : (folders.find((f) => f.key === folder)?.label ?? 'Todos');
+  const currentTitle = digestMode ? 'Hoy' : saved ? 'Guardados' : folder === 'all' ? 'Todos' : (folders.find((f) => f.key === folder)?.label ?? 'Todos');
   const selected = detail;
+  const filtersActive = Boolean(debouncedSearch || unreadOnly || mutes.length > 0);
 
   const iconBtn: CSSProperties = { width: 36, height: 36, display: 'grid', placeItems: 'center', borderRadius: SN.radius.base, border: `1px solid ${t.border}`, background: t.bg, color: t.textSecondary, cursor: 'pointer', flexShrink: 0 };
   const ghostBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, height: 36, padding: '0 12px', borderRadius: SN.radius.base, border: `1px solid ${t.border}`, background: t.bg, color: t.textSecondary, fontFamily: SN.font.body, fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' };
@@ -220,18 +291,30 @@ export default function App() {
 
   const fmt = (n: number) => (n > 999 ? '999+' : String(n));
 
-  // ── piezas de UI ──────────────────────────────────────────────────────────
+  const selectView = (opts: { folder?: string; saved?: boolean; digest?: boolean }) => {
+    setSaved(opts.saved ?? false);
+    setDigestMode(opts.digest ?? false);
+    if (opts.folder) setFolder(opts.folder);
+    setSheetOpen(false);
+    setBarsHidden(false);
+    if (phone) closeArticle();
+  };
+
+  const onListScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    if (!phone) return;
+    const top = e.currentTarget.scrollTop;
+    const delta = top - lastScrollTop.current;
+    if (top > 80 && delta > 8) setBarsHidden(true);
+    else if (delta < -8 || top < 40) setBarsHidden(false);
+    lastScrollTop.current = top;
+  }, [phone]);
+
+  // ── piezas ────────────────────────────────────────────────────────────────
 
   const folderEntries = useMemo(
     () => [{ key: 'all', label: 'Todos', unreadCount: unreadTotal }, ...folders],
     [folders, unreadTotal],
   );
-
-  const selectFolder = (key: string, isSaved = false) => {
-    setSaved(isSaved);
-    if (!isSaved) setFolder(key);
-    if (phone) closeArticle();
-  };
 
   const themeMenu = themeMenuOpen && (
     <>
@@ -249,14 +332,32 @@ export default function App() {
     </>
   );
 
+  const readingMenu = readMenuOpen && (
+    <>
+      <div onClick={() => setReadMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+      <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 41, background: t.bg, border: `1px solid ${t.border}`, borderRadius: SN.radius.lg, boxShadow: SN.shadow.lg, padding: 12, width: 200 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: t.textTertiary, marginBottom: 8 }}>Tamaño de letra</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <button className="sn-iconbtn" style={{ ...iconBtn, width: 32, height: 32 }} disabled={reading.size === 0}
+            onClick={() => updateReading({ ...reading, size: Math.max(0, reading.size - 1) as ReadingPrefs['size'] })}>A−</button>
+          <span style={{ flex: 1, textAlign: 'center', fontSize: 13, color: t.textSecondary, fontFamily: SN.font.mono }}>{READING_SIZES[reading.size]}px</span>
+          <button className="sn-iconbtn" style={{ ...iconBtn, width: 32, height: 32 }} disabled={reading.size === 3}
+            onClick={() => updateReading({ ...reading, size: Math.min(3, reading.size + 1) as ReadingPrefs['size'] })}>A+</button>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}>
+          <span style={{ fontSize: 13.5, color: t.textSecondary, fontWeight: 600 }}>Fuente serif</span>
+          <span onClick={() => updateReading({ ...reading, serif: !reading.serif })} style={{ width: 34, height: 20, borderRadius: 999, background: reading.serif ? SN.brand.teal : t.surface3, border: `1px solid ${reading.serif ? SN.brand.teal : t.border}`, position: 'relative', transition: 'all .18s', cursor: 'pointer' }}>
+            <span style={{ position: 'absolute', top: 1, left: reading.serif ? 15 : 1, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,.2)', transition: 'left .18s' }} />
+          </span>
+        </label>
+      </div>
+    </>
+  );
+
   const header = (
     <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: phone ? '0 12px' : '0 16px', height: 56, borderBottom: `1px solid ${t.border}`, background: t.surface1, flexShrink: 0 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-        <div style={{ display: 'flex', gap: 3, alignItems: 'flex-end', flexShrink: 0 }}>
-          <span style={{ width: 5, height: 16, borderRadius: 2, background: SN.brand.blue }} />
-          <span style={{ width: 5, height: 20, borderRadius: 2, background: SN.brand.teal }} />
-          <span style={{ width: 5, height: 13, borderRadius: 2, background: SN.brand.coral }} />
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+        <LogoMark s={27} />
         <span style={{ fontFamily: SN.font.title, fontWeight: 800, fontSize: 19, color: t.textPrimary, letterSpacing: '-0.01em' }}>Señal</span>
         {!compact && <span style={{ fontFamily: SN.font.body, fontSize: 12, color: t.textTertiary, marginTop: 3 }}>· tu industria, sin ruido</span>}
       </div>
@@ -265,11 +366,13 @@ export default function App() {
           <span style={{ display: 'flex', animation: refreshing ? 'sn-spin 1s linear infinite' : undefined }}><IcRefresh s={15} /></span>
           {!phone && (refreshing ? 'Actualizando…' : 'Actualizar')}
         </button>
-        <button className="sn-iconbtn" style={phone ? iconBtn : ghostBtn} onClick={() => void markAllRead()} title="Marcar todo leído">
-          <IcCheck s={15} />{!phone && 'Marcar todo leído'}
-        </button>
-        <button className="sn-iconbtn" style={iconBtn} onClick={() => setShowSettings(true)} title="Fuentes y carpetas"><IcGear s={17} /></button>
-        <button className="sn-iconbtn" style={iconBtn} onClick={() => setThemeMenuOpen((v) => !v)} title="Tema"><IcPalette s={17} /></button>
+        {!phone && (
+          <button className="sn-iconbtn" style={ghostBtn} onClick={() => void markAllRead()} title="Marcar todo leído">
+            <IcCheck s={15} />Marcar todo leído
+          </button>
+        )}
+        <button className="sn-iconbtn" style={iconBtn} onClick={() => setShowSettings(true)} title="Ajustes"><IcGear s={17} /></button>
+        <button className="sn-iconbtn" style={iconBtn} onClick={() => { setThemeMenuOpen((v) => !v); setReadMenuOpen(false); }} title="Tema"><IcPalette s={17} /></button>
         {themeMenu}
       </div>
     </header>
@@ -277,12 +380,19 @@ export default function App() {
 
   const sidebar = !compact && (
     <nav className="scroll-y" style={{ width: 236, flexShrink: 0, borderRight: `1px solid ${t.border}`, background: t.surface1, padding: '16px 12px', display: 'flex', flexDirection: 'column' }}>
+      <button onClick={() => selectView({ digest: true })} className={digestMode ? '' : 'sn-hover'}
+        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', marginBottom: 10, border: `1px solid ${digestMode ? t.activeBar : t.border}`, cursor: 'pointer', borderRadius: SN.radius.lg, textAlign: 'left', background: digestMode ? t.activeBg : t.bg, color: digestMode ? t.activeText : t.textSecondary, fontFamily: SN.font.body, fontWeight: 600, fontSize: 14 }}>
+        <span style={{ color: digestMode ? t.activeText : SN.brand.teal, display: 'flex' }}><IcSpark s={17} /></span>
+        <span style={{ flex: 1 }}>Hoy</span>
+        <span style={{ fontSize: 11, color: t.textMuted }}>24 h</span>
+      </button>
+
       <div style={{ fontFamily: SN.font.body, fontWeight: 600, fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: t.textTertiary, padding: '0 8px 8px' }}>Carpetas</div>
       {folderEntries.map(({ key, label, unreadCount }) => {
-        const active = !saved && folder === key;
+        const active = !saved && !digestMode && folder === key;
         const Icon = key === 'all' ? IcInbox : iconFor(key);
         return (
-          <button key={key} onClick={() => selectFolder(key)} className={active ? '' : 'sn-hover'}
+          <button key={key} onClick={() => selectView({ folder: key })} className={active ? '' : 'sn-hover'}
             style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', marginBottom: 2, border: 'none', cursor: 'pointer', borderRadius: SN.radius.base, textAlign: 'left', background: active ? t.activeBg : 'transparent', color: active ? t.activeText : t.textSecondary, fontFamily: SN.font.body, fontWeight: 500, fontSize: 14, position: 'relative' }}>
             {active && <span style={{ position: 'absolute', left: 0, top: 8, bottom: 8, width: 3, borderRadius: 3, background: t.activeBar }} />}
             <span style={{ display: 'grid', placeItems: 'center', color: active ? t.activeText : t.textTertiary }}><Icon s={18} /></span>
@@ -293,7 +403,7 @@ export default function App() {
       })}
 
       <div style={{ height: 1, background: t.borderSubtle, margin: '12px 8px' }} />
-      <button onClick={() => selectFolder(folder, true)} className={saved ? '' : 'sn-hover'}
+      <button onClick={() => selectView({ saved: true })} className={saved ? '' : 'sn-hover'}
         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', border: 'none', cursor: 'pointer', borderRadius: SN.radius.base, textAlign: 'left', background: saved ? t.activeBg : 'transparent', color: saved ? t.activeText : t.textSecondary, fontFamily: SN.font.body, fontWeight: 500, fontSize: 14 }}>
         <span style={{ color: saved ? t.activeText : SN.brand.coral }}><IcStarF s={17} /></span>
         <span style={{ flex: 1 }}>Guardados</span>
@@ -307,118 +417,211 @@ export default function App() {
     </nav>
   );
 
-  const chips = compact && (
-    <div className="sn-chips" style={{ display: 'flex', gap: 6, padding: '10px 12px', overflowX: 'auto', borderBottom: `1px solid ${t.border}`, background: t.surface1, flexShrink: 0 }}>
+  const chipStyle = (active: boolean, accent = false): CSSProperties => ({
+    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: SN.radius.full,
+    border: `1px solid ${active ? t.activeBar : t.border}`, background: active ? t.activeBg : t.bg,
+    color: active ? t.activeText : accent ? SN.brand.teal : t.textSecondary,
+    fontFamily: SN.font.body, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0,
+  });
+
+  const chipsRow = (
+    <>
+      <button onClick={() => selectView({ digest: true })} style={chipStyle(digestMode, true)}>
+        <IcSpark s={13} /><span style={{ color: digestMode ? t.activeText : t.textSecondary }}>Hoy</span>
+      </button>
       {folderEntries.map(({ key, label, unreadCount }) => {
-        const active = !saved && folder === key;
+        const active = !saved && !digestMode && folder === key;
         return (
-          <button key={key} onClick={() => selectFolder(key)}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: SN.radius.full, border: `1px solid ${active ? t.activeBar : t.border}`, background: active ? t.activeBg : t.bg, color: active ? t.activeText : t.textSecondary, fontFamily: SN.font.body, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0 }}>
+          <button key={key} onClick={() => selectView({ folder: key })} style={chipStyle(active)}>
             {label}
             {unreadCount > 0 && <span style={{ fontFamily: SN.font.mono, fontSize: 10.5, color: active ? t.activeText : t.textMuted }}>{fmt(unreadCount)}</span>}
           </button>
         );
       })}
-      <button onClick={() => selectFolder(folder, true)}
-        style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: SN.radius.full, border: `1px solid ${saved ? t.activeBar : t.border}`, background: saved ? t.activeBg : t.bg, color: saved ? t.activeText : SN.brand.coral, fontFamily: SN.font.body, fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'pointer', flexShrink: 0 }}>
-        <IcStarF s={13} /><span style={{ color: saved ? t.activeText : t.textSecondary }}>Guardados</span>
+      <button onClick={() => selectView({ saved: true })} style={chipStyle(saved)}>
+        <span style={{ color: saved ? t.activeText : SN.brand.coral, display: 'flex' }}><IcStarF s={13} /></span>
+        <span>Guardados</span>
       </button>
+    </>
+  );
+
+  const chips = compact && (
+    <div style={{ maxHeight: barsHidden ? 0 : 60, overflow: 'hidden', transition: 'max-height .25s ease', flexShrink: 0, borderBottom: barsHidden ? 'none' : `1px solid ${t.border}`, background: t.surface1 }}>
+      <div className="sn-chips" style={{ display: 'flex', gap: 6, padding: '10px 12px', overflowX: 'auto' }}>
+        {chipsRow}
+      </div>
+    </div>
+  );
+
+  const searchBox = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 12px', border: `1px solid ${t.border}`, borderRadius: SN.radius.base, background: t.surface1, marginBottom: 8 }}>
+      <span style={{ color: t.textMuted, display: 'flex' }}><IcSearch s={16} /></span>
+      <input className="sn-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en tus feeds…"
+        style={{ border: 'none', outline: 'none', background: 'transparent', flex: 1, fontFamily: SN.font.body, fontSize: 14, color: t.textPrimary, minWidth: 0 }} />
+      {search && <span className="sn-chip-x" onClick={() => setSearch('')} style={{ color: t.textMuted }}><IcX s={14} /></span>}
+    </div>
+  );
+
+  const mutesRow = (
+    <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: t.textTertiary, fontSize: 12, fontWeight: 500 }}><IcFilter s={14} /> Silenciar:</span>
+      {mutes.map((m) => (
+        <span key={m} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: t.tldrBg, color: t.tldrText, border: `1px solid ${t.tldrBorder}`, borderRadius: SN.radius.full, padding: '3px 6px 3px 9px', fontSize: 12, fontWeight: 600 }}>
+          {m}<span className="sn-chip-x" onClick={() => void removeMute(m)}><IcX s={13} /></span>
+        </span>
+      ))}
+      <input className="sn-input" value={muteInput} onChange={(e) => setMuteInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void addMute()} placeholder="+ palabra"
+        style={{ border: `1px dashed ${t.border}`, outline: 'none', background: 'transparent', borderRadius: SN.radius.full, padding: '4px 10px', width: 82, fontFamily: SN.font.body, fontSize: 12, color: t.textPrimary }} />
+    </div>
+  );
+
+  const unreadToggle = (
+    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
+      <span style={{ fontSize: 12, color: t.textTertiary, fontWeight: 500 }}>No leídos</span>
+      <span onClick={() => setUnreadOnly(!unreadOnly)} style={{ width: 34, height: 20, borderRadius: 999, background: unreadOnly ? SN.brand.teal : t.surface3, border: `1px solid ${unreadOnly ? SN.brand.teal : t.border}`, position: 'relative', transition: 'all .18s', cursor: 'pointer', flexShrink: 0 }}>
+        <span style={{ position: 'absolute', top: 1, left: unreadOnly ? 15 : 1, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,.2)', transition: 'left .18s' }} />
+      </span>
+    </label>
+  );
+
+  const metaLine = (a: ArticleListItem) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, minWidth: 0 }}>
+      <span style={{ color: a.dotColor, display: 'flex', flexShrink: 0 }}><IcCircle s={7} /></span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.source}</span>
+      <span style={{ fontSize: 12, color: t.textMuted, whiteSpace: 'nowrap' }}>· {timeAgo(a.publishedAt)}</span>
+      {a.readingMinutes && <span style={{ fontSize: 12, color: t.textMuted, whiteSpace: 'nowrap' }}>· {a.readingMinutes} min</span>}
+    </div>
+  );
+
+  const articleRow = (a: ArticleListItem, opts?: { score?: number }) => {
+    const isSel = a.id === selectedId && !phone;
+    const dx = swipe?.id === a.id ? swipe.dx : 0;
+    const actionFor = dx > 0 ? gestures.right : gestures.left;
+    const showDigestCard = opts?.score !== undefined;
+    const row = (
+      <div onClick={() => void open(a.id)} className={isSel ? '' : 'sn-hover'}
+        {...(rowTouch ? { onTouchStart: rowTouch.onTouchStart(a.id), onTouchMove: rowTouch.onTouchMove(a.id), onTouchEnd: rowTouch.onTouchEnd(a.id) } : {})}
+        style={{ display: 'flex', gap: 12, padding: '14px 16px', cursor: 'pointer', background: isSel ? t.activeBg : t.bg, position: 'relative', transform: dx ? `translateX(${dx}px)` : undefined, transition: dx ? 'none' : 'transform .18s ease' }}>
+        {isSel && <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: t.activeBar }} />}
+        <div style={{ flexShrink: 0, paddingTop: 4 }}>
+          {!a.isRead ? <span style={{ color: a.dotColor, display: 'block' }}><IcCircle s={8} /></span> : <span style={{ width: 8, height: 8, display: 'block' }} />}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {metaLine(a)}
+          <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 15, lineHeight: 1.35, color: a.isRead ? t.textTertiary : t.textPrimary, marginBottom: 4 }}>
+            {a.title}
+            {showDigestCard && (opts!.score ?? 0) >= 4 && (
+              <span style={{ marginLeft: 8, verticalAlign: 'middle', display: 'inline-flex', alignItems: 'center', gap: 3, background: t.activeBg, color: t.activeText, borderRadius: SN.radius.full, padding: '1px 8px', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <IcSpark s={10} /> relevante
+              </span>
+            )}
+          </div>
+          {showDigestCard && a.tldr ? (
+            <div style={{ fontSize: 13, lineHeight: 1.55, color: t.textSecondary }}>{a.tldr}</div>
+          ) : a.excerpt && a.excerpt !== 'Comments' ? (
+            <div style={{ fontSize: 13, lineHeight: 1.5, color: t.textTertiary, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{a.excerpt}</div>
+          ) : null}
+        </div>
+        {a.imageUrl && (
+          <img src={a.imageUrl} alt="" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            style={{ width: 52, height: 52, objectFit: 'cover', borderRadius: SN.radius.base, flexShrink: 0, alignSelf: 'center', background: t.surface2 }} />
+        )}
+        <button onClick={(e) => { e.stopPropagation(); void toggleStar(a.id, !a.isStarred); }} title="Guardar"
+          style={{ flexShrink: 0, border: 'none', background: 'transparent', cursor: 'pointer', color: a.isStarred ? SN.brand.coral : t.textMuted, padding: 6, margin: -4, alignSelf: 'flex-start' }}>
+          {a.isStarred ? <IcStarF s={16} /> : <IcStar s={16} />}
+        </button>
+      </div>
+    );
+
+    return (
+      <div key={a.id} style={{ position: 'relative', overflow: 'hidden', borderBottom: `1px solid ${t.borderSubtle}` }}>
+        {dx !== 0 && actionFor !== 'none' && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: dx > 0 ? 'flex-start' : 'flex-end', padding: '0 20px', background: actionFor === 'read' ? 'rgba(59,190,180,0.18)' : 'rgba(247,153,98,0.18)', color: actionFor === 'read' ? SN.brand.teal : SN.brand.coral }}>
+            {actionFor === 'read' ? <IcCheck s={20} /> : <IcStarF s={20} />}
+          </div>
+        )}
+        {row}
+      </div>
+    );
+  };
+
+  const digestPane = (
+    <div className="scroll-y" onScroll={onListScroll} style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ padding: '12px 16px 6px', color: t.textMuted, fontSize: 12.5 }}>
+        Lo más relevante de las últimas 24 h según tus intereses (editables en Ajustes ⚙).
+      </div>
+      {loadingDigest ? (
+        <div style={{ padding: '48px 24px', textAlign: 'center', color: t.textTertiary, fontSize: 14 }}>Armando tu resumen…</div>
+      ) : digestItems.length === 0 ? (
+        <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+          <div style={{ width: 60, height: 60, borderRadius: '50%', background: t.surface3, color: t.textTertiary, display: 'grid', placeItems: 'center', margin: '0 auto 14px' }}><IcSpark s={26} /></div>
+          <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 16, color: t.textPrimary, marginBottom: 4 }}>Sin artículos en 24 h</div>
+          <div style={{ fontSize: 13, color: t.textTertiary }}>Pulsa Actualizar o espera al próximo ciclo.</div>
+        </div>
+      ) : (
+        digestItems.map((a) => articleRow(a, { score: a.score }))
+      )}
     </div>
   );
 
   const listPane = (
     <section style={{ width: phone ? '100%' : compact ? 340 : 376, flexShrink: 0, borderRight: phone ? 'none' : `1px solid ${t.border}`, display: 'flex', flexDirection: 'column', minHeight: 0, background: t.bg, flex: phone ? 1 : undefined }}>
-      <div style={{ padding: '12px 16px 10px', borderBottom: `1px solid ${t.borderSubtle}`, flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+      <div style={{ padding: phone ? '10px 16px 8px' : '12px 16px 10px', borderBottom: `1px solid ${t.borderSubtle}`, flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <h2 style={{ margin: 0, fontFamily: SN.font.title, fontWeight: 700, fontSize: 19, color: t.textPrimary, letterSpacing: '-0.01em' }}>{currentTitle}</h2>
-            <span style={{ fontFamily: SN.font.body, fontSize: 13, color: t.textTertiary }}>{items.length}{nextCursor ? '+' : ''}</span>
+            <span style={{ fontFamily: SN.font.body, fontSize: 13, color: t.textTertiary }}>
+              {digestMode ? digestItems.length : `${items.length}${nextCursor ? '+' : ''}`}
+            </span>
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', userSelect: 'none' }}>
-            <span style={{ fontSize: 12, color: t.textTertiary, fontWeight: 500 }}>No leídos</span>
-            <span onClick={() => setUnreadOnly(!unreadOnly)} style={{ width: 34, height: 20, borderRadius: 999, background: unreadOnly ? SN.brand.teal : t.surface3, border: `1px solid ${unreadOnly ? SN.brand.teal : t.border}`, position: 'relative', transition: 'all .18s', cursor: 'pointer', flexShrink: 0 }}>
-              <span style={{ position: 'absolute', top: 1, left: unreadOnly ? 15 : 1, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,.2)', transition: 'left .18s' }} />
-            </span>
-          </label>
+          {!phone && !digestMode && unreadToggle}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 12px', border: `1px solid ${t.border}`, borderRadius: SN.radius.base, background: t.surface1, marginBottom: 8 }}>
-          <span style={{ color: t.textMuted, display: 'flex' }}><IcSearch s={16} /></span>
-          <input className="sn-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en tus feeds…"
-            style={{ border: 'none', outline: 'none', background: 'transparent', flex: 1, fontFamily: SN.font.body, fontSize: 14, color: t.textPrimary, minWidth: 0 }} />
-          {search && <span className="sn-chip-x" onClick={() => setSearch('')} style={{ color: t.textMuted }}><IcX s={14} /></span>}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: t.textTertiary, fontSize: 12, fontWeight: 500 }}><IcFilter s={14} /> Silenciar:</span>
-          {mutes.map((m) => (
-            <span key={m} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: t.tldrBg, color: t.tldrText, border: `1px solid ${t.tldrBorder}`, borderRadius: SN.radius.full, padding: '3px 6px 3px 9px', fontSize: 12, fontWeight: 600 }}>
-              {m}<span className="sn-chip-x" onClick={() => void removeMute(m)}><IcX s={13} /></span>
-            </span>
-          ))}
-          <input className="sn-input" value={muteInput} onChange={(e) => setMuteInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void addMute()} placeholder="+ palabra"
-            style={{ border: `1px dashed ${t.border}`, outline: 'none', background: 'transparent', borderRadius: SN.radius.full, padding: '4px 10px', width: 82, fontFamily: SN.font.body, fontSize: 12, color: t.textPrimary }} />
-        </div>
-        {hiddenByMutes > 0 && (
-          <div style={{ marginTop: 8, fontSize: 12, color: t.textMuted }}>{hiddenByMutes} {hiddenByMutes === 1 ? 'artículo oculto' : 'artículos ocultos'} por filtros de ruido</div>
+        {!phone && !digestMode && (
+          <div style={{ marginTop: 10 }}>
+            {searchBox}
+            {mutesRow}
+            {hiddenByMutes > 0 && (
+              <div style={{ marginTop: 8, fontSize: 12, color: t.textMuted }}>{hiddenByMutes} {hiddenByMutes === 1 ? 'artículo oculto' : 'artículos ocultos'} por filtros de ruido</div>
+            )}
+          </div>
         )}
       </div>
 
-      <div className="scroll-y" style={{ flex: 1, minHeight: 0 }}>
-        {listError ? (
-          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-            <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 16, color: t.textPrimary, marginBottom: 4 }}>No se pudo cargar</div>
-            <div style={{ fontSize: 13, color: t.textTertiary, marginBottom: 16 }}>{listError}</div>
-            <button style={ghostBtn} className="sn-iconbtn" onClick={() => void loadList(true)}>Reintentar</button>
-          </div>
-        ) : items.length === 0 && !loadingList ? (
-          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-            <div style={{ width: 60, height: 60, borderRadius: '50%', background: t.surface3, color: t.textTertiary, display: 'grid', placeItems: 'center', margin: '0 auto 14px' }}><IcSearch s={26} /></div>
-            <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 16, color: t.textPrimary, marginBottom: 4 }}>Nada por aquí</div>
-            <div style={{ fontSize: 13, color: t.textTertiary, marginBottom: 16 }}>Ajusta la búsqueda o los filtros.</div>
-            <button style={ghostBtn} className="sn-iconbtn" onClick={() => { setSearch(''); setUnreadOnly(false); }}>Limpiar filtros</button>
-          </div>
-        ) : (
-          <>
-            {items.map((a) => {
-              const isSel = a.id === selectedId && !phone;
-              return (
-                <div key={a.id} onClick={() => void open(a.id)} className={isSel ? '' : 'sn-hover'}
-                  style={{ display: 'flex', gap: 12, padding: '14px 16px', cursor: 'pointer', borderBottom: `1px solid ${t.borderSubtle}`, background: isSel ? t.activeBg : 'transparent', position: 'relative' }}>
-                  {isSel && <span style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, background: t.activeBar }} />}
-                  <div style={{ flexShrink: 0, paddingTop: 4 }}>
-                    {!a.isRead ? <span style={{ color: a.dotColor, display: 'block' }}><IcCircle s={8} /></span> : <span style={{ width: 8, height: 8, display: 'block' }} />}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <span style={{ color: a.dotColor, display: 'flex' }}><IcCircle s={7} /></span>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.source}</span>
-                      <span style={{ fontSize: 12, color: t.textMuted, whiteSpace: 'nowrap' }}>· {timeAgo(a.publishedAt)}</span>
-                    </div>
-                    <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 15, lineHeight: 1.35, color: a.isRead ? t.textTertiary : t.textPrimary, marginBottom: 4 }}>{a.title}</div>
-                    {a.excerpt && a.excerpt !== 'Comments' && (
-                      <div style={{ fontSize: 13, lineHeight: 1.5, color: t.textTertiary, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{a.excerpt}</div>
-                    )}
-                  </div>
-                  <button onClick={(e) => { e.stopPropagation(); void toggleStar(a.id, !a.isStarred); }} title="Guardar"
-                    style={{ flexShrink: 0, border: 'none', background: 'transparent', cursor: 'pointer', color: a.isStarred ? SN.brand.coral : t.textMuted, padding: 6, margin: -4, alignSelf: 'flex-start' }}>
-                    {a.isStarred ? <IcStarF s={16} /> : <IcStar s={16} />}
+      {digestMode ? digestPane : (
+        <div className="scroll-y" onScroll={onListScroll} style={{ flex: 1, minHeight: 0 }}>
+          {listError ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 16, color: t.textPrimary, marginBottom: 4 }}>No se pudo cargar</div>
+              <div style={{ fontSize: 13, color: t.textTertiary, marginBottom: 16 }}>{listError}</div>
+              <button style={ghostBtn} className="sn-iconbtn" onClick={() => void loadList(true)}>Reintentar</button>
+            </div>
+          ) : items.length === 0 && !loadingList ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <div style={{ width: 60, height: 60, borderRadius: '50%', background: t.surface3, color: t.textTertiary, display: 'grid', placeItems: 'center', margin: '0 auto 14px' }}><IcSearch s={26} /></div>
+              <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 16, color: t.textPrimary, marginBottom: 4 }}>Nada por aquí</div>
+              <div style={{ fontSize: 13, color: t.textTertiary, marginBottom: 16 }}>Ajusta la búsqueda o los filtros.</div>
+              <button style={ghostBtn} className="sn-iconbtn" onClick={() => { setSearch(''); setUnreadOnly(false); }}>Limpiar filtros</button>
+            </div>
+          ) : (
+            <>
+              {items.map((a) => articleRow(a))}
+              {nextCursor && (
+                <div style={{ padding: 16, textAlign: 'center' }}>
+                  <button style={ghostBtn} className="sn-iconbtn" disabled={loadingList} onClick={() => void loadList(false, nextCursor)}>
+                    {loadingList ? 'Cargando…' : 'Cargar más'}
                   </button>
                 </div>
-              );
-            })}
-            {nextCursor && (
-              <div style={{ padding: 16, textAlign: 'center' }}>
-                <button style={ghostBtn} className="sn-iconbtn" disabled={loadingList} onClick={() => void loadList(false, nextCursor)}>
-                  {loadingList ? 'Cargando…' : 'Cargar más'}
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </section>
   );
+
+  const contentFont = reading.serif ? SN.font.serif : SN.font.body;
+  const contentSize = READING_SIZES[reading.size];
 
   const articleBody = !selectedId ? (
     <div style={{ height: '100%', display: 'grid', placeItems: 'center', padding: 24 }}>
@@ -439,9 +642,10 @@ export default function App() {
             <span style={{ color: selected.dotColor, display: 'flex' }}><IcCircle s={9} /></span>
             <span style={{ fontFamily: SN.font.body, fontWeight: 600, fontSize: 14, color: t.textSecondary }}>{selected.source}</span>
             <span style={{ fontSize: 13, color: t.textMuted }}>· {timeAgo(selected.publishedAt)}</span>
-            {selected.author && <span style={{ fontSize: 13, color: t.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>· {selected.author}</span>}
+            {selected.readingMinutes && <span style={{ fontSize: 13, color: t.textMuted }}>· {selected.readingMinutes} min</span>}
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+            <button className="sn-iconbtn" style={iconBtn} onClick={() => { setReadMenuOpen((v) => !v); setThemeMenuOpen(false); }} title="Lectura"><IcType s={16} /></button>
             <button className="sn-iconbtn" style={{ ...iconBtn, color: selected.isStarred ? SN.brand.coral : t.textSecondary }} onClick={() => void toggleStar(selected.id, !selected.isStarred)} title="Guardar">
               {selected.isStarred ? <IcStarF s={17} /> : <IcStar s={17} />}
             </button>
@@ -449,6 +653,7 @@ export default function App() {
             <button className="sn-iconbtn" style={ghostBtn} onClick={() => void toggleRead(selected.id, !selected.isRead)}>
               {selected.isRead ? 'Marcar no leído' : 'Marcar leído'}
             </button>
+            {readingMenu}
           </div>
         </div>
       )}
@@ -458,6 +663,7 @@ export default function App() {
           <span style={{ color: selected.dotColor, display: 'flex' }}><IcCircle s={8} /></span>
           <span style={{ fontFamily: SN.font.body, fontWeight: 600, fontSize: 13, color: t.textSecondary }}>{selected.source}</span>
           <span style={{ fontSize: 12, color: t.textMuted }}>· {timeAgo(selected.publishedAt)}</span>
+          {selected.readingMinutes && <span style={{ fontSize: 12, color: t.textMuted }}>· {selected.readingMinutes} min</span>}
         </div>
       )}
 
@@ -473,8 +679,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Cuerpo completo dentro de la app (ESC-05) — doble sanitización (RS-3) */}
-      <div className="sn-content" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
+      <div className="sn-content" style={{ fontFamily: contentFont, fontSize: contentSize }} dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
 
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8, padding: '5px 10px', borderRadius: SN.radius.full, background: t.surface2, border: `1px solid ${t.borderSubtle}`, color: selected.contentStatus === 'full' ? SN.brand.teal : SN.brand.coral, fontSize: 12, fontWeight: 600 }}>
         <IcCheck s={14} />
@@ -486,12 +691,21 @@ export default function App() {
   );
 
   const articleOverlay = phone && selectedId && (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 30, background: t.bg, display: 'flex', flexDirection: 'column' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', height: 52, borderBottom: `1px solid ${t.border}`, background: t.surface1, flexShrink: 0 }}>
+    <div
+      onTouchStart={(e) => { edgeRef.current = e.touches[0].clientX < 28 ? e.touches[0].clientX : null; }}
+      onTouchMove={(e) => {
+        if (edgeRef.current !== null && e.touches[0].clientX - edgeRef.current > 70) {
+          edgeRef.current = null;
+          closeArticle();
+        }
+      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 30, background: t.bg, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 12px', height: 52, borderBottom: `1px solid ${t.border}`, background: t.surface1, flexShrink: 0, position: 'relative' }}>
         <button className="sn-iconbtn" style={{ ...iconBtn, border: 'none', background: 'transparent' }} onClick={closeArticle} title="Volver"><IcBack s={20} /></button>
         <span style={{ flex: 1 }} />
         {selected && (
           <>
+            <button className="sn-iconbtn" style={iconBtn} onClick={() => { setReadMenuOpen((v) => !v); }} title="Lectura"><IcType s={16} /></button>
             <button className="sn-iconbtn" style={{ ...iconBtn, color: selected.isStarred ? SN.brand.coral : t.textSecondary }} onClick={() => void toggleStar(selected.id, !selected.isStarred)} title="Guardar">
               {selected.isStarred ? <IcStarF s={17} /> : <IcStar s={17} />}
             </button>
@@ -501,8 +715,46 @@ export default function App() {
             </button>
           </>
         )}
+        {readingMenu}
       </div>
       <article className="scroll-y" style={{ flex: 1, minHeight: 0 }}>{articleBody}</article>
+    </div>
+  );
+
+  // FAB + bottom sheet de filtros (una mano, móvil)
+  const fab = phone && !selectedId && (
+    <button onClick={() => setSheetOpen(true)} title="Filtros y carpetas"
+      style={{ position: 'fixed', right: 16, bottom: 'calc(20px + env(safe-area-inset-bottom))', zIndex: 25, width: 54, height: 54, borderRadius: '50%', border: 'none', background: SN.brand.blue, color: '#fff', display: 'grid', placeItems: 'center', cursor: 'pointer', boxShadow: '0 4px 14px rgba(0,0,0,0.35)' }}>
+      <IcFilter s={22} />
+      {filtersActive && <span style={{ position: 'absolute', top: 4, right: 4, width: 11, height: 11, borderRadius: '50%', background: SN.brand.coral, border: `2px solid ${SN.brand.blue}` }} />}
+    </button>
+  );
+
+  const sheet = phone && sheetOpen && (
+    <div onClick={() => setSheetOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 45, background: 'rgba(0,0,0,0.45)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+      <div onClick={(e) => e.stopPropagation()} className="scroll-y"
+        style={{ background: t.bg, borderTop: `1px solid ${t.border}`, borderRadius: '16px 16px 0 0', padding: '10px 16px calc(20px + env(safe-area-inset-bottom))', maxHeight: '78dvh', overflowY: 'auto' }}>
+        <div style={{ width: 40, height: 4, borderRadius: 4, background: t.border, margin: '0 auto 14px' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <span style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 15, color: t.textPrimary }}>Vistas y carpetas</span>
+          {unreadToggle}
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>{chipsRow}</div>
+
+        <div style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 15, color: t.textPrimary, marginBottom: 8 }}>Buscar</div>
+        {searchBox}
+
+        <div style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 15, color: t.textPrimary, margin: '14px 0 8px' }}>Ruido</div>
+        {mutesRow}
+        {hiddenByMutes > 0 && (
+          <div style={{ marginTop: 8, fontSize: 12, color: t.textMuted }}>{hiddenByMutes} {hiddenByMutes === 1 ? 'artículo oculto' : 'artículos ocultos'} por filtros de ruido</div>
+        )}
+
+        <button className="sn-iconbtn" style={{ ...ghostBtn, width: '100%', justifyContent: 'center', marginTop: 18 }} onClick={() => { void markAllRead(); setSheetOpen(false); }}>
+          <IcCheck s={15} /> Marcar todo leído
+        </button>
+      </div>
     </div>
   );
 
@@ -520,19 +772,19 @@ export default function App() {
         .scroll-y::-webkit-scrollbar-thumb{background:var(--sb);border-radius:8px;}
         .scroll-y::-webkit-scrollbar-track{background:transparent;}
         .sn-chips::-webkit-scrollbar{display:none;}
-        .sn-content{font-family:${SN.font.body};font-size:${phone ? '16.5px' : '16px'};line-height:1.68;color:${t.textSecondary};overflow-wrap:break-word;}
+        .sn-content{line-height:1.7;color:${t.textSecondary};overflow-wrap:break-word;}
         .sn-content p{margin:0 0 18px;}
         .sn-content img{max-width:100%;height:auto;border-radius:${SN.radius.lg}px;margin:8px 0;}
         .sn-content figure{margin:16px 0;}
         .sn-content figcaption{font-size:13px;color:${t.textTertiary};margin-top:6px;}
         .sn-content a{color:${t.isDark ? SN.blue[300] : SN.blue[600]};text-decoration:none;border-bottom:1px solid ${t.border};}
         .sn-content a:hover{border-bottom-color:${t.isDark ? SN.blue[300] : SN.blue[600]};}
-        .sn-content pre{background:${t.surface2};border:1px solid ${t.borderSubtle};border-radius:${SN.radius.lg}px;padding:14px;overflow-x:auto;font-size:13.5px;line-height:1.55;}
-        .sn-content code{font-family:${SN.font.mono};font-size:0.9em;background:${t.surface2};padding:1px 5px;border-radius:4px;}
+        .sn-content pre{background:${t.surface2};border:1px solid ${t.borderSubtle};border-radius:${SN.radius.lg}px;padding:14px;overflow-x:auto;font-size:13.5px;line-height:1.55;font-family:${SN.font.mono};}
+        .sn-content code{font-family:${SN.font.mono};font-size:0.88em;background:${t.surface2};padding:1px 5px;border-radius:4px;}
         .sn-content pre code{background:transparent;padding:0;}
         .sn-content blockquote{margin:16px 0;padding:4px 16px;border-left:3px solid ${SN.brand.teal};color:${t.textTertiary};}
         .sn-content h1,.sn-content h2,.sn-content h3,.sn-content h4{font-family:${SN.font.title};color:${t.textPrimary};line-height:1.3;margin:26px 0 12px;}
-        .sn-content h1{font-size:21px}.sn-content h2{font-size:18.5px}.sn-content h3{font-size:16.5px}.sn-content h4{font-size:15px}
+        .sn-content h1{font-size:1.3em}.sn-content h2{font-size:1.15em}.sn-content h3{font-size:1.05em}.sn-content h4{font-size:1em}
         .sn-content ul,.sn-content ol{margin:0 0 18px;padding-left:24px;}
         .sn-content li{margin-bottom:6px;}
         .sn-content table{border-collapse:collapse;width:100%;margin:16px 0;font-size:14px;display:block;overflow-x:auto;}
@@ -556,6 +808,8 @@ export default function App() {
         </div>
       </div>
 
+      {fab}
+      {sheet}
       {articleOverlay}
 
       {showSettings && (
@@ -564,6 +818,8 @@ export default function App() {
           phone={phone}
           folders={folders}
           feeds={feeds}
+          gestures={gestures}
+          onGestures={updateGestures}
           onClose={() => setShowSettings(false)}
           onChanged={() => {
             void refreshFeeds();
@@ -573,162 +829,5 @@ export default function App() {
         />
       )}
     </>
-  );
-}
-
-// ── Modal de fuentes y carpetas ─────────────────────────────────────────────
-
-function SettingsModal({ t, phone, folders, feeds, onClose, onChanged }: {
-  t: (typeof THEMES)['light'];
-  phone: boolean;
-  folders: Folder[];
-  feeds: FeedInfo[];
-  onClose: () => void;
-  onChanged: () => void;
-}) {
-  const [url, setUrl] = useState('');
-  const [folderKey, setFolderKey] = useState(folders[0]?.key ?? '');
-  const [newFolder, setNewFolder] = useState(false);
-  const [newFolderLabel, setNewFolderLabel] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [okMsg, setOkMsg] = useState<string | null>(null);
-
-  const addFeed = async () => {
-    setError(null);
-    setOkMsg(null);
-    const cleanUrl = url.trim();
-    if (!cleanUrl) return;
-    setBusy(true);
-    try {
-      let key = folderKey;
-      if (newFolder) {
-        const label = newFolderLabel.trim();
-        if (!label) throw new Error('Ponle nombre a la carpeta nueva');
-        const created = await api.createFolder(label);
-        key = created.key;
-      }
-      const feed = await api.createFeed(cleanUrl, key);
-      setOkMsg(`Agregado: ${feed.title} — se ingesta en el próximo ciclo (o pulsa Actualizar)`);
-      setUrl('');
-      setNewFolder(false);
-      setNewFolderLabel('');
-      setFolderKey(key);
-      onChanged();
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const removeFeed = async (feed: FeedInfo) => {
-    setError(null);
-    setOkMsg(null);
-    setBusy(true);
-    try {
-      await api.deleteFeed(feed.id);
-      setOkMsg(`Eliminado: ${feed.title} (sus artículos guardados se conservan)`);
-      onChanged();
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const removeFolder = async (key: string) => {
-    setError(null);
-    setOkMsg(null);
-    try {
-      await api.deleteFolder(key);
-      onChanged();
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
-
-  const input: CSSProperties = { height: 40, padding: '0 12px', border: `1px solid ${t.border}`, borderRadius: SN.radius.base, background: t.surface1, color: t.textPrimary, fontFamily: SN.font.body, fontSize: 14, outline: 'none', minWidth: 0 };
-  const primaryBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6, height: 40, padding: '0 16px', borderRadius: SN.radius.base, border: 'none', background: SN.brand.blue, color: '#fff', fontFamily: SN.font.body, fontSize: 14, fontWeight: 600, cursor: 'pointer', opacity: busy ? 0.6 : 1 };
-
-  const byFolder = useMemo(() => {
-    const map = new Map<string, FeedInfo[]>();
-    for (const f of feeds) {
-      if (!map.has(f.folderKey)) map.set(f.folderKey, []);
-      map.get(f.folderKey)!.push(f);
-    }
-    return map;
-  }, [feeds]);
-
-  return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.45)', display: 'grid', placeItems: phone ? 'stretch' : 'center', padding: phone ? 0 : 20 }}>
-      <div onClick={(e) => e.stopPropagation()} className="scroll-y"
-        style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: phone ? 0 : 14, boxShadow: SN.shadow.lg, width: phone ? '100%' : 'min(560px, 100%)', maxHeight: phone ? '100%' : '85vh', height: phone ? '100%' : undefined, display: 'flex', flexDirection: 'column' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
-          <span style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 17, color: t.textPrimary }}>Fuentes y carpetas</span>
-          <button className="sn-iconbtn" onClick={onClose} style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', borderRadius: SN.radius.base, border: `1px solid ${t.border}`, background: t.bg, color: t.textSecondary, cursor: 'pointer' }}><IcX s={16} /></button>
-        </div>
-
-        <div className="scroll-y" style={{ padding: '16px 18px', overflowY: 'auto', flex: 1, minHeight: 0 }}>
-          {/* Alta de feed */}
-          <div style={{ marginBottom: 8, fontFamily: SN.font.body, fontWeight: 600, fontSize: 12, letterSpacing: '0.07em', textTransform: 'uppercase', color: t.textTertiary }}>Agregar fuente</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 6 }}>
-            <input className="sn-input" style={input} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://ejemplo.com/feed.xml" inputMode="url" />
-            <div style={{ display: 'flex', gap: 8 }}>
-              {!newFolder ? (
-                <select value={folderKey} onChange={(e) => { if (e.target.value === '__new__') { setNewFolder(true); } else setFolderKey(e.target.value); }}
-                  style={{ ...input, flex: 1, appearance: 'auto' }}>
-                  {folders.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
-                  <option value="__new__">+ Nueva carpeta…</option>
-                </select>
-              ) : (
-                <div style={{ display: 'flex', gap: 6, flex: 1, alignItems: 'center' }}>
-                  <input className="sn-input" style={{ ...input, flex: 1 }} value={newFolderLabel} onChange={(e) => setNewFolderLabel(e.target.value)} placeholder="Nombre del tema (p. ej. Ciencia)" autoFocus />
-                  <button className="sn-iconbtn" onClick={() => { setNewFolder(false); setNewFolderLabel(''); }} style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', borderRadius: SN.radius.base, border: `1px solid ${t.border}`, background: t.bg, color: t.textSecondary, cursor: 'pointer', flexShrink: 0 }}><IcX s={14} /></button>
-                </div>
-              )}
-              <button style={primaryBtn} disabled={busy} onClick={() => void addFeed()}><IcPlus s={15} /> Agregar</button>
-            </div>
-          </div>
-          {error && <div style={{ color: '#D43F0E', fontSize: 13, marginBottom: 6 }}>{error}</div>}
-          {okMsg && <div style={{ color: t.tldrText, fontSize: 13, marginBottom: 6 }}>{okMsg}</div>}
-
-          <div style={{ height: 1, background: t.borderSubtle, margin: '14px 0' }} />
-
-          {/* Fuentes por carpeta */}
-          {folders.map((folder) => {
-            const list = byFolder.get(folder.key) ?? [];
-            const FIcon = iconFor(folder.key);
-            return (
-              <div key={folder.key} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                  <span style={{ color: t.textTertiary, display: 'flex' }}><FIcon s={15} /></span>
-                  <span style={{ fontFamily: SN.font.body, fontWeight: 700, fontSize: 13.5, color: t.textPrimary }}>{folder.label}</span>
-                  <span style={{ fontSize: 12, color: t.textMuted }}>{list.length} {list.length === 1 ? 'fuente' : 'fuentes'}</span>
-                  {list.length === 0 && (
-                    <button onClick={() => void removeFolder(folder.key)} title="Eliminar carpeta vacía"
-                      style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: t.textMuted, cursor: 'pointer', display: 'flex', padding: 4 }}><IcTrash s={14} /></button>
-                  )}
-                </div>
-                {list.map((feed) => (
-                  <div key={feed.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: SN.radius.base, border: `1px solid ${t.borderSubtle}`, marginBottom: 6, background: t.surface1 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: t.textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{feed.title}</div>
-                      <div style={{ fontSize: 12, color: feed.lastFetchStatus === 'error' ? '#D43F0E' : t.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {feed.lastFetchStatus === 'error' ? `Error: ${feed.lastError ?? 'desconocido'}` : feed.url}
-                      </div>
-                    </div>
-                    <button onClick={() => void removeFeed(feed)} disabled={busy} title="Eliminar fuente"
-                      style={{ border: 'none', background: 'transparent', color: t.textMuted, cursor: 'pointer', display: 'flex', padding: 6, flexShrink: 0 }}>
-                      <IcTrash s={15} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
   );
 }
