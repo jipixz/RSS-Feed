@@ -13,3 +13,11 @@ body,
 button {
   font: inherit;
 }
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  overscroll-behavior: none;
+}

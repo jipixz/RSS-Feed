@@ -1,4 +1,4 @@
-import { IsBoolean, IsIn, IsOptional } from 'class-validator';
+import { IsBoolean, IsOptional, Matches } from 'class-validator';
 
 export class SetReadDto {
   @IsBoolean()
@@ -12,6 +12,6 @@ export class SetStarDto {
 
 export class MarkAllReadDto {
   @IsOptional()
-  @IsIn(['ai', 'dev', 'sql', 'sec'])
+  @Matches(/^[a-z0-9-]{1,30}$/)
   folder?: string;
 }

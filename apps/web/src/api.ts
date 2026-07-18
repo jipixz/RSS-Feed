@@ -28,6 +28,20 @@ export interface Folder {
   unreadCount: number;
 }
 
+export interface FeedInfo {
+  id: string;
+  url: string;
+  title: string;
+  siteUrl: string | null;
+  folderKey: string;
+  active: boolean;
+  lastFetchedAt: string | null;
+  lastFetchStatus: string | null;
+  lastError: string | null;
+}
+
+export type ThemeKey = 'light' | 'sepia' | 'dark' | 'black';
+
 export interface ArticlesPage {
   items: ArticleListItem[];
   nextCursor: string | null;
@@ -93,14 +107,26 @@ export const api = {
   removeMute(term: string): Promise<string[]> {
     return request(`/api/mutes/${encodeURIComponent(term)}`, { method: 'DELETE' });
   },
-  getPrefs(): Promise<{ theme: 'light' | 'dark' }> {
+  getPrefs(): Promise<{ theme: ThemeKey }> {
     return request('/api/prefs');
   },
-  setTheme(theme: 'light' | 'dark'): Promise<{ theme: 'light' | 'dark' }> {
+  setTheme(theme: ThemeKey): Promise<{ theme: ThemeKey }> {
     return request('/api/prefs', { method: 'PATCH', body: JSON.stringify({ theme }) });
   },
-  feedsCount(): Promise<number> {
-    return request<unknown[]>('/api/feeds').then((f) => f.length);
+  feeds(): Promise<FeedInfo[]> {
+    return request('/api/feeds');
+  },
+  createFeed(url: string, folderKey: string): Promise<FeedInfo> {
+    return request('/api/feeds', { method: 'POST', body: JSON.stringify({ url, folderKey }) });
+  },
+  deleteFeed(id: string): Promise<{ ok: true }> {
+    return request(`/api/feeds/${id}`, { method: 'DELETE' });
+  },
+  createFolder(label: string): Promise<Folder> {
+    return request('/api/folders', { method: 'POST', body: JSON.stringify({ label }) });
+  },
+  deleteFolder(key: string): Promise<{ ok: true }> {
+    return request(`/api/folders/${key}`, { method: 'DELETE' });
   },
   ingest(): Promise<{ feedsFetched: number; newArticles: number; summarized: number; errors: number }> {
     return request('/api/ingest', { method: 'POST' });

@@ -1,11 +1,11 @@
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, Matches, Max, MaxLength, Min } from 'class-validator';
 
 const toBool = ({ value }: { value: unknown }) => value === true || value === 'true' || value === '1';
 
 export class ListArticlesQueryDto {
   @IsOptional()
-  @IsIn(['ai', 'dev', 'sql', 'sec'])
+  @Matches(/^[a-z0-9-]{1,30}$/)
   folder?: string;
 
   @IsOptional()

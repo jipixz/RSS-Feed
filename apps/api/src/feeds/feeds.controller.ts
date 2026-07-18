@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
-import { IsIn, IsUrl } from 'class-validator';
+import { IsUrl, Matches } from 'class-validator';
 import { FeedsService } from './feeds.service';
 
 class CreateFeedDto {
   @IsUrl({ protocols: ['http', 'https'], require_protocol: true })
   url!: string;
 
-  @IsIn(['ai', 'dev', 'sql', 'sec'])
+  @Matches(/^[a-z0-9-]{1,30}$/)
   folderKey!: string;
 }
 
