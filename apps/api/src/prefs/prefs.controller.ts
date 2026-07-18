@@ -3,8 +3,8 @@ import { IsIn } from 'class-validator';
 import { PrismaService } from '../prisma/prisma.service';
 
 class UpdatePrefsDto {
-  @IsIn(['light', 'sepia', 'dark', 'black'])
-  theme!: 'light' | 'sepia' | 'dark' | 'black';
+  @IsIn(['light', 'sepia', 'cafe', 'dark', 'black'])
+  theme!: 'light' | 'sepia' | 'cafe' | 'dark' | 'black';
 }
 
 /** ESC-13: preferencia de tema persistida (fila singleton). */

@@ -32,11 +32,12 @@ export interface Theme {
   isDark: boolean;
 }
 
-export type ThemeKey = 'light' | 'sepia' | 'dark' | 'black';
+export type ThemeKey = 'light' | 'sepia' | 'cafe' | 'dark' | 'black';
 
 export const THEME_LABELS: Record<ThemeKey, string> = {
   light: 'Claro',
   sepia: 'Sepia',
+  cafe: 'Café',
   dark: 'Oscuro',
   black: 'Negro',
 };
@@ -58,6 +59,15 @@ export const THEMES: Record<ThemeKey, Theme> = {
     activeBg: 'rgba(0,130,166,0.13)', activeText: '#0A5A73', activeBar: '#0A7A9C', hover: '#DED4BE', sb: '#BFB194',
     tldrBg: 'rgba(25,108,105,0.12)', tldrBorder: 'rgba(25,108,105,0.32)', tldrText: '#1E5F5C',
     isDark: false,
+  },
+  // Modo noche cálido: oscuro con tinte café, acentos ámbar — cero azules fríos
+  cafe: {
+    appBg: '#14100A', bg: '#1B1610', surface1: '#211B13', surface2: '#292218', surface3: '#322A1E',
+    border: '#3A3020', borderSubtle: '#2A2216',
+    textPrimary: '#EDE3D0', textSecondary: '#C7B99D', textTertiary: '#98896C', textMuted: '#6C614C',
+    activeBg: 'rgba(217,158,79,0.14)', activeText: '#E9B77E', activeBar: '#D99E4F', hover: '#241D14', sb: '#3A3020',
+    tldrBg: 'rgba(217,158,79,0.09)', tldrBorder: 'rgba(217,158,79,0.30)', tldrText: '#D9A967',
+    isDark: true,
   },
   dark: {
     appBg: '#070F14', bg: '#0A141A', surface1: '#0F1C24', surface2: '#16252F', surface3: '#1F303B',

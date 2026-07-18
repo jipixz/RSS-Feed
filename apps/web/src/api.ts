@@ -40,7 +40,7 @@ export interface FeedInfo {
   lastError: string | null;
 }
 
-export type ThemeKey = 'light' | 'sepia' | 'dark' | 'black';
+export type ThemeKey = 'light' | 'sepia' | 'cafe' | 'dark' | 'black';
 
 export interface ArticlesPage {
   items: ArticleListItem[];
