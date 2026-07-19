@@ -92,6 +92,7 @@ export default function App() {
 
   const articlePaneRef = useRef<HTMLElement | null>(null);
   const lastScrollTop = useRef(0);
+  const [readProgress, setReadProgress] = useState(0);
 
   // ── carga inicial ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -329,6 +330,27 @@ export default function App() {
     setBarsHidden(false);
     if (phone) closeArticle();
   };
+
+  // ── barra de progreso de lectura ──────────────────────────────────────────
+  const measureProgress = useCallback((el: HTMLElement) => {
+    const max = el.scrollHeight - el.clientHeight;
+    setReadProgress(max > 8 ? Math.min(1, el.scrollTop / max) : 1);
+  }, []);
+
+  const onArticleScroll = useCallback((e: React.UIEvent<HTMLElement>) => {
+    measureProgress(e.currentTarget);
+  }, [measureProgress]);
+
+  // al abrir un artículo, medir tras el render (varias veces: las imágenes cambian la altura)
+  useEffect(() => {
+    setReadProgress(0);
+    if (!selected) return;
+    const measure = () => { if (articlePaneRef.current) measureProgress(articlePaneRef.current); };
+    const raf = requestAnimationFrame(measure);
+    const t1 = setTimeout(measure, 250);
+    const t2 = setTimeout(measure, 800);
+    return () => { cancelAnimationFrame(raf); clearTimeout(t1); clearTimeout(t2); };
+  }, [selected, measureProgress]);
 
   const onListScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     if (!phone) return;
@@ -721,6 +743,13 @@ export default function App() {
     </div>
   );
 
+  // barra fina de progreso de lectura, pegada arriba del contenido del artículo
+  const progressBar = selected ? (
+    <div style={{ position: 'sticky', top: 0, left: 0, right: 0, height: 3, background: t.borderSubtle, zIndex: 6 }}>
+      <div style={{ height: '100%', width: `${Math.round(readProgress * 100)}%`, background: t.activeBar, transition: 'width .1s linear' }} />
+    </div>
+  ) : null;
+
   const articleOverlay = phone && selectedId && (
     <div
       onTouchStart={(e) => { edgeRef.current = e.touches[0].clientX < 28 ? e.touches[0].clientX : null; }}
@@ -748,7 +777,10 @@ export default function App() {
         )}
         {readingMenu}
       </div>
-      <article className="scroll-y" style={{ flex: 1, minHeight: 0 }}>{articleBody}</article>
+      <article ref={articlePaneRef} className="scroll-y" onScroll={onArticleScroll} style={{ flex: 1, minHeight: 0 }}>
+        {progressBar}
+        {articleBody}
+      </article>
     </div>
   );
 
@@ -831,7 +863,8 @@ export default function App() {
             {sidebar}
             {listPane}
             {!phone && (
-              <article ref={articlePaneRef} className="scroll-y" style={{ flex: 1, minWidth: 0, background: t.bg }}>
+              <article ref={articlePaneRef} className="scroll-y" onScroll={onArticleScroll} style={{ flex: 1, minWidth: 0, background: t.bg }}>
+                {progressBar}
                 {articleBody}
               </article>
             )}
