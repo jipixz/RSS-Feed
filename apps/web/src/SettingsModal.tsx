@@ -15,13 +15,15 @@ const SWIPE_OPTIONS: { value: SwipeAction; label: string }[] = [
   { value: 'none', label: 'Nada' },
 ];
 
-export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, onClose, onChanged }: {
+export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, canInstall, onInstall, onClose, onChanged }: {
   t: Theme;
   phone: boolean;
   folders: Folder[];
   feeds: FeedInfo[];
   gestures: GesturePrefs;
   onGestures: (g: GesturePrefs) => void;
+  canInstall: boolean;
+  onInstall: () => void;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -148,6 +150,21 @@ export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, 
           {(error || okMsg) && (
             <div style={{ position: 'sticky', top: 0, zIndex: 1, padding: '8px 0', background: t.bg }}>
               <div style={{ color: error ? '#D43F0E' : t.tldrText, fontSize: 13 }}>{error ?? okMsg}</div>
+            </div>
+          )}
+
+          {/* Instalar como app (PWA) */}
+          {canInstall && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', marginTop: 8, borderRadius: SN.radius.lg, border: `1px solid ${t.activeBar}`, background: t.activeBg }}>
+              <span style={{ color: t.activeText, display: 'flex', flexShrink: 0 }}><IcDownload s={20} /></span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 14, color: t.textPrimary }}>Instalar Señal como app</div>
+                <div style={{ fontSize: 12.5, color: t.textSecondary }}>Pantalla completa, sin barra del navegador.</div>
+              </div>
+              <button onClick={onInstall}
+                style={{ height: 36, padding: '0 14px', borderRadius: SN.radius.base, border: 'none', background: SN.brand.blue, color: '#fff', fontFamily: SN.font.body, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                Instalar
+              </button>
             </div>
           )}
 

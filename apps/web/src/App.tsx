@@ -29,6 +29,11 @@ function useViewportWidth() {
   return width;
 }
 
+interface InstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
 function Pill({ children, bg, color, mono }: { children: React.ReactNode; bg: string; color: string; mono?: boolean }) {
   return (
     <span style={{ background: bg, color, fontFamily: mono ? SN.font.mono : SN.font.body, fontSize: mono ? 11 : 12, fontWeight: 600, padding: '2px 8px', borderRadius: SN.radius.full, lineHeight: 1.4, whiteSpace: 'nowrap' }}>
@@ -75,6 +80,7 @@ export default function App() {
   const [readMenuOpen, setReadMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showConsole, setShowConsole] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [barsHidden, setBarsHidden] = useState(false);
 
@@ -95,6 +101,28 @@ export default function App() {
     void refreshFolders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // PWA: capturar el evento de instalación para ofrecer un botón "Instalar app"
+  useEffect(() => {
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as InstallPromptEvent);
+    };
+    const onInstalled = () => setInstallPrompt(null);
+    window.addEventListener('beforeinstallprompt', onPrompt);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  const doInstall = useCallback(async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    await installPrompt.userChoice;
+    setInstallPrompt(null);
+  }, [installPrompt]);
 
   const refreshFolders = useCallback(async () => {
     try { setFolders(await api.folders()); } catch { /* no fatal */ }
@@ -823,6 +851,8 @@ export default function App() {
           feeds={feeds}
           gestures={gestures}
           onGestures={updateGestures}
+          canInstall={!!installPrompt}
+          onInstall={doInstall}
           onClose={() => setShowSettings(false)}
           onChanged={() => {
             void refreshFeeds();

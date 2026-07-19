@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "Señal — tu industria, sin ruido",
   "short_name": "Señal",
   "description": "Lector RSS con contenido completo y TL;DR IA",
@@ -6,6 +7,7 @@
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#0C0C0E",
   "theme_color": "#0C0C0E",
