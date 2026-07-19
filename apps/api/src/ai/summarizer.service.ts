@@ -89,7 +89,8 @@ export class SummarizerService {
         title: article.title,
         source: article.feed.title,
         model,
-        promptPreview: text.slice(0, 280),
+        // El mensaje exacto que recibe el modelo (igual que en el provider)
+        prompt: `Título: ${article.title}\n\nArtículo:\n${text}`,
         at: new Date().toISOString(),
       });
       const startedAt = Date.now();

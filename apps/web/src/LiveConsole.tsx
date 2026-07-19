@@ -4,17 +4,18 @@ import { IcActivity, IcRefresh, IcSpark, IcX } from './icons';
 import { api } from './api';
 
 type AiEvent =
-  | { type: 'start'; id: string; title: string; source: string; model: string; promptPreview: string; at: string }
+  | { type: 'start'; id: string; title: string; source: string; model: string; prompt: string; at: string }
   | { type: 'done'; id: string; title: string; tldr: string; tokens: number | null; ms: number; at: string }
   | { type: 'error'; id: string; title: string; message: string; at: string }
-  | { type: 'cycle'; summarized: number; failed: number; budgetLeft: number; at: string };
+  | { type: 'cycle'; summarized: number; failed: number; budgetLeft: number; at: string }
+  | { type: 'ping' };
 
 interface Entry {
   id: string;
   title: string;
   source: string;
   model: string;
-  promptPreview: string;
+  prompt: string;
   status: 'running' | 'done' | 'error';
   tldr: string;
   tokens: number | null;
@@ -54,6 +55,7 @@ export function LiveConsole({ t, phone, onClose }: { t: Theme; phone: boolean; o
       } catch {
         return;
       }
+      if (ev.type === 'ping') return; // latido — mantiene viva la conexión
       if (ev.type === 'cycle') {
         setCycle({ summarized: ev.summarized, failed: ev.failed, budgetLeft: ev.budgetLeft });
         return;
@@ -62,9 +64,11 @@ export function LiveConsole({ t, phone, onClose }: { t: Theme; phone: boolean; o
         if (ev.type === 'start') {
           const entry: Entry = {
             id: ev.id, title: ev.title, source: ev.source, model: ev.model,
-            promptPreview: ev.promptPreview, status: 'running', tldr: '', tokens: null, ms: 0, message: '',
+            prompt: ev.prompt, status: 'running', tldr: '', tokens: null, ms: 0, message: '',
           };
-          return [entry, ...prev].slice(0, 60);
+          // dedupe: si el búfer se re-emite al reconectar, reemplaza en vez de duplicar
+          const without = prev.filter((e) => e.id !== ev.id);
+          return [entry, ...without].slice(0, 60);
         }
         return prev.map((e) => {
           if (e.id !== ev.id || e.status !== 'running') return e;
@@ -172,7 +176,7 @@ function ConsoleCard({ t, entry }: { t: Theme; entry: Entry }) {
     <span style={{ fontSize: 11, color: '#ff5470', whiteSpace: 'nowrap', flexShrink: 0 }}>error</span>;
 
   return (
-    <div style={{ border: `1px solid ${t.borderSubtle}`, borderLeft: `3px solid ${accent}`, borderRadius: SN.radius.base, background: t.surface1, padding: '10px 12px', minWidth: 0, overflow: 'hidden' }}>
+    <div style={{ border: `1px solid ${t.borderSubtle}`, borderLeft: `3px solid ${accent}`, borderRadius: SN.radius.base, background: t.surface1, padding: '10px 12px', minWidth: 0, overflow: 'hidden', flexShrink: 0 }}>
       {/* fuente + estado */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, minWidth: 0 }}>
         <span style={{ fontFamily: SN.font.mono, fontSize: 11, color: t.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{entry.source}</span>
@@ -181,10 +185,15 @@ function ConsoleCard({ t, entry }: { t: Theme; entry: Entry }) {
       {/* título (hasta 2 líneas) */}
       <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 13.5, lineHeight: 1.35, color: t.textPrimary, marginBottom: 6, overflowWrap: 'anywhere', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{entry.title}</div>
 
-      {/* prompt enviado (recortado a 3 líneas, rompe URLs largas) */}
-      <div style={{ fontFamily: SN.font.mono, fontSize: 11.5, lineHeight: 1.5, color: t.textTertiary, background: t.surface2, borderRadius: 6, padding: '6px 8px', marginBottom: entry.status === 'running' && !entry.tldr ? 0 : 8, overflowWrap: 'anywhere', wordBreak: 'break-word', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-        <span style={{ color: t.textMuted }}>→ </span>{entry.promptPreview}…
-      </div>
+      {/* prompt enviado — completo, scrolleable si es largo */}
+      <details open style={{ marginBottom: entry.status === 'running' && !entry.tldr ? 0 : 8 }}>
+        <summary style={{ cursor: 'pointer', fontSize: 11, color: t.textMuted, fontFamily: SN.font.mono, marginBottom: 4, listStyle: 'none' }}>
+          → prompt enviado ({entry.prompt.length.toLocaleString('es')} car.)
+        </summary>
+        <div className="scroll-y" style={{ fontFamily: SN.font.mono, fontSize: 11.5, lineHeight: 1.5, color: t.textTertiary, background: t.surface2, borderRadius: 6, padding: '6px 8px', overflowWrap: 'anywhere', wordBreak: 'break-word', whiteSpace: 'pre-wrap', maxHeight: 150, overflowY: 'auto' }}>
+          {entry.prompt}
+        </div>
+      </details>
 
       {entry.status === 'error' ? (
         <div style={{ fontSize: 12.5, color: '#ff5470', overflowWrap: 'anywhere' }}>✕ {entry.message}</div>

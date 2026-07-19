@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Observable, Subject, concat, from } from 'rxjs';
 
 export type AiEvent =
-  | { type: 'start'; id: string; title: string; source: string; model: string; promptPreview: string; at: string }
+  | { type: 'start'; id: string; title: string; source: string; model: string; prompt: string; at: string }
   | { type: 'done'; id: string; title: string; tldr: string; tokens: number | null; ms: number; at: string }
   | { type: 'error'; id: string; title: string; message: string; at: string }
   | { type: 'cycle'; summarized: number; failed: number; budgetLeft: number; at: string };

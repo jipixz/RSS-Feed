@@ -1,5 +1,5 @@
 import { Controller, Get, Inject, MessageEvent, Sse } from '@nestjs/common';
-import { Observable, map } from 'rxjs';
+import { Observable, interval, map, merge } from 'rxjs';
 import { AiEventsService } from './ai-events.service';
 import { AI_PROVIDER, AiProvider } from './provider/ai-provider.interface';
 import { SUMMARY_SYSTEM_PROMPT } from './provider/prompt';
@@ -25,6 +25,10 @@ export class AiController {
   /** Stream de eventos de resumen en vivo (Server-Sent Events). */
   @Sse('stream')
   stream(): Observable<MessageEvent> {
-    return this.events.stream().pipe(map((event) => ({ data: event }) as MessageEvent));
+    const events = this.events.stream().pipe(map((event) => ({ data: event }) as MessageEvent));
+    // Latido cada 25 s: evita que Cloudflare (idle ~100 s) corte la conexión
+    // y dispare una reconexión que re-emitiría el búfer (duplicados).
+    const heartbeat = interval(25_000).pipe(map(() => ({ data: { type: 'ping' } }) as MessageEvent));
+    return merge(events, heartbeat);
   }
 }
