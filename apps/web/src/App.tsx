@@ -93,6 +93,9 @@ export default function App() {
   const articlePaneRef = useRef<HTMLElement | null>(null);
   const lastScrollTop = useRef(0);
   const [readProgress, setReadProgress] = useState(0);
+  const [backToast, setBackToast] = useState(false);
+  const exitArmed = useRef(false);
+  const uiRef = useRef({ selectedId: null as string | null, sheetOpen: false, showSettings: false, showConsole: false });
 
   // ── carga inicial ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -202,6 +205,37 @@ export default function App() {
     setSelectedId(null);
     setDetail(null);
   }, []);
+
+  // ── botón "atrás" del teléfono ────────────────────────────────────────────
+  useEffect(() => {
+    uiRef.current = { selectedId, sheetOpen, showSettings, showConsole };
+  }, [selectedId, sheetOpen, showSettings, showConsole]);
+
+  // El "atrás" cierra lo que esté abierto (artículo/paneles) en vez de salir de
+  // la app; en la raíz, pide confirmación y sale al segundo "atrás".
+  useEffect(() => {
+    window.history.pushState({ senal: true }, '');
+    const reguard = () => window.history.pushState({ senal: true }, '');
+    const onPop = () => {
+      const ui = uiRef.current;
+      if (ui.showConsole) { setShowConsole(false); exitArmed.current = false; reguard(); return; }
+      if (ui.showSettings) { setShowSettings(false); exitArmed.current = false; reguard(); return; }
+      if (ui.sheetOpen) { setSheetOpen(false); exitArmed.current = false; reguard(); return; }
+      if (ui.selectedId) { closeArticle(); exitArmed.current = false; reguard(); return; }
+      // en la raíz: doble "atrás" para salir
+      if (exitArmed.current) {
+        window.removeEventListener('popstate', onPop);
+        window.history.back(); // deja salir de verdad
+        return;
+      }
+      exitArmed.current = true;
+      setBackToast(true);
+      reguard();
+      window.setTimeout(() => { exitArmed.current = false; setBackToast(false); }, 2200);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [closeArticle]);
 
   const toggleRead = useCallback(async (id: string, read: boolean) => {
     setItems((prev) => prev.map((a) => (a.id === id ? { ...a, isRead: read } : a)));
@@ -744,9 +778,11 @@ export default function App() {
   );
 
   // barra fina de progreso de lectura, pegada arriba del contenido del artículo
+  // rosa de marca en todos los temas salvo sepia (ahí el azul contrasta mejor)
+  const progressColor = theme === 'sepia' ? t.activeBar : SN.brand.coral;
   const progressBar = selected ? (
     <div style={{ position: 'sticky', top: 0, left: 0, right: 0, height: 3, background: t.borderSubtle, zIndex: 6 }}>
-      <div style={{ height: '100%', width: `${Math.round(readProgress * 100)}%`, background: t.activeBar, transition: 'width .1s linear' }} />
+      <div style={{ height: '100%', width: `${Math.round(readProgress * 100)}%`, background: progressColor, transition: 'width .1s linear' }} />
     </div>
   ) : null;
 
@@ -875,6 +911,12 @@ export default function App() {
       {fab}
       {sheet}
       {articleOverlay}
+
+      {backToast && (
+        <div style={{ position: 'fixed', left: '50%', bottom: 'calc(28px + env(safe-area-inset-bottom))', transform: 'translateX(-50%)', zIndex: 60, background: t.textPrimary, color: t.bg, padding: '10px 18px', borderRadius: SN.radius.full, fontFamily: SN.font.body, fontSize: 13.5, fontWeight: 600, boxShadow: SN.shadow.lg, whiteSpace: 'nowrap' }}>
+          Presiona atrás de nuevo para salir
+        </div>
+      )}
 
       {showSettings && (
         <SettingsModal
