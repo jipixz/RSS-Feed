@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AI_PROVIDER, AiProvider } from '../ai/provider/ai-provider.interface';
 import { DEFAULT_INTERESTS, parseInterests } from '../prefs/interests';
 import { SUGGESTED_CATALOG, SuggestedFeed } from '../feeds/suggested-catalog';
+import { scoreAffinity } from '../common/affinity';
 
 const SAMPLE_COUNT = 5;
 
@@ -63,20 +64,10 @@ export class DiscoverService {
     const sampleTitles = items.map((i) => (i.title ?? '').trim()).filter(Boolean);
 
     // Afinidad determinista por palabras clave (transparente, gratis)
-    let matchedSamples = 0;
-    let totalHits = 0;
-    const matched = new Set<string>();
-    for (const it of items) {
-      const hay = `${it.title ?? ''} ${it.contentSnippet ?? it.summary ?? ''}`.toLowerCase();
-      let hit = false;
-      for (const term of terms) {
-        if (hay.includes(term)) { totalHits += 1; matched.add(term); hit = true; }
-      }
-      if (hit) matchedSamples += 1;
-    }
-    const coverage = items.length ? matchedSamples / items.length : 0;
-    const density = items.length ? Math.min(1, totalHits / (items.length * 2)) : 0;
-    const score = Math.round((coverage * 0.7 + density * 0.3) * 100);
+    const { score, matched } = scoreAffinity(
+      items.map((i) => ({ title: i.title ?? '', extra: i.contentSnippet ?? i.summary ?? '' })),
+      terms,
+    );
 
     // Opinión de la IA (nunca bloquea — FE-03)
     let verdict: string | null = null;
@@ -90,6 +81,6 @@ export class DiscoverService {
       }
     }
 
-    return { score, matched: [...matched], sampleTitles, verdict, aiEnabled: this.provider.isEnabled() };
+    return { score, matched, sampleTitles, verdict, aiEnabled: this.provider.isEnabled() };
   }
 }

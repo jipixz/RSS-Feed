@@ -19,6 +19,11 @@ export class FeedsController {
     return this.feeds.list();
   }
 
+  @Get('affinity')
+  affinities() {
+    return this.feeds.affinities();
+  }
+
   @Post()
   create(@Body() body: CreateFeedDto) {
     return this.feeds.create(body.url, body.folderKey);

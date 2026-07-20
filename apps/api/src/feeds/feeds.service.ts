@@ -2,6 +2,8 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import Parser from 'rss-parser';
 import { Feed } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { DEFAULT_INTERESTS, parseInterests } from '../prefs/interests';
+import { scoreAffinity } from '../common/affinity';
 
 export interface FeedDto {
   id: string;
@@ -14,6 +16,15 @@ export interface FeedDto {
   lastFetchStatus: string | null;
   lastError: string | null;
 }
+
+export interface FeedAffinity {
+  feedId: string;
+  score: number;
+  sampleSize: number; // artículos recientes evaluados
+  recentPerWeek: number; // volumen: artículos de los últimos 7 días
+}
+
+const AFFINITY_SAMPLE = 30;
 
 @Injectable()
 export class FeedsService {
@@ -28,6 +39,35 @@ export class FeedsService {
       orderBy: [{ folder: { sortOrder: 'asc' } }, { title: 'asc' }],
     });
     return feeds.map((f) => this.toDto(f, f.folder.key));
+  }
+
+  /**
+   * "Termómetro": afinidad de cada feed activo con tus intereses (según sus
+   * artículos recientes) + volumen semanal. Ayuda a decidir qué podar.
+   */
+  async affinities(): Promise<FeedAffinity[]> {
+    const [feeds, pref] = await Promise.all([
+      this.prisma.feed.findMany({ where: { active: true }, select: { id: true } }),
+      this.prisma.userPref.findUnique({ where: { id: 'singleton' } }),
+    ]);
+    const terms = parseInterests(pref?.interests) ?? DEFAULT_INTERESTS;
+    const weekAgo = new Date(Date.now() - 7 * 24 * 3600_000);
+
+    return Promise.all(
+      feeds.map(async (feed) => {
+        const [arts, recentPerWeek] = await Promise.all([
+          this.prisma.article.findMany({
+            where: { feedId: feed.id },
+            orderBy: { publishedAt: 'desc' },
+            take: AFFINITY_SAMPLE,
+            select: { title: true, excerpt: true },
+          }),
+          this.prisma.article.count({ where: { feedId: feed.id, publishedAt: { gte: weekAgo } } }),
+        ]);
+        const { score } = scoreAffinity(arts.map((a) => ({ title: a.title, extra: a.excerpt })), terms);
+        return { feedId: feed.id, score, sampleSize: arts.length, recentPerWeek };
+      }),
+    );
   }
 
   /** ESC-11: valida que la URL sea un feed parseable antes de guardar. */

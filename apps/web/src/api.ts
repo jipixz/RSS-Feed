@@ -45,6 +45,13 @@ export interface FeedInfo {
   lastError: string | null;
 }
 
+export interface FeedAffinity {
+  feedId: string;
+  score: number;
+  sampleSize: number;
+  recentPerWeek: number;
+}
+
 export type ThemeKey = 'light' | 'sepia' | 'cafe' | 'dark' | 'black';
 
 export interface SuggestedItem {
@@ -154,6 +161,9 @@ export const api = {
   },
   feeds(): Promise<FeedInfo[]> {
     return request('/api/feeds');
+  },
+  feedAffinities(): Promise<FeedAffinity[]> {
+    return request('/api/feeds/affinity');
   },
   createFeed(url: string, folderKey: string): Promise<FeedInfo> {
     return request('/api/feeds', { method: 'POST', body: JSON.stringify({ url, folderKey }) });

@@ -1,7 +1,7 @@
 import { CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { SN, Theme } from './tokens';
 import { IcCode, IcCpu, IcDb, IcDownload, IcPlus, IcShield, IcSpark, IcTag, IcTrash, IcUpload, IcX } from './icons';
-import { api, FeedInfo, Folder } from './api';
+import { api, FeedAffinity, FeedInfo, Folder } from './api';
 import { GesturePrefs, SwipeAction } from './local-prefs';
 
 const FOLDER_ICONS: Record<string, (p: { s?: number }) => React.ReactElement> = {
@@ -38,10 +38,14 @@ export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, 
 
   const [interests, setInterests] = useState<string[]>([]);
   const [interestInput, setInterestInput] = useState('');
+  const [affinity, setAffinity] = useState<Record<string, FeedAffinity>>({});
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     api.getPrefs().then((p) => setInterests(p.interests)).catch(() => undefined);
+    api.feedAffinities()
+      .then((list) => setAffinity(Object.fromEntries(list.map((a) => [a.feedId, a]))))
+      .catch(() => undefined);
   }, []);
 
   const note = (msg: string | null, err = false) => {
@@ -258,25 +262,44 @@ export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, 
                       style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: t.textMuted, cursor: 'pointer', display: 'flex', padding: 4 }}><IcTrash s={14} /></button>
                   )}
                 </div>
-                {list.map((feed) => (
+                {list.map((feed) => {
+                  const aff = affinity[feed.id];
+                  return (
                   <div key={feed.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: SN.radius.base, border: `1px solid ${t.borderSubtle}`, marginBottom: 6, background: t.surface1 }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13.5, fontWeight: 600, color: t.textPrimary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{feed.title}</div>
                       <div style={{ fontSize: 12, color: feed.lastFetchStatus === 'error' ? '#D43F0E' : t.textMuted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {feed.lastFetchStatus === 'error' ? `Error: ${feed.lastError ?? 'desconocido'}` : feed.url}
                       </div>
+                      {aff && aff.sampleSize > 0 && <AffinityMeter t={t} aff={aff} />}
                     </div>
                     <button onClick={() => void removeFeed(feed)} disabled={busy} title="Eliminar fuente"
                       style={{ border: 'none', background: 'transparent', color: t.textMuted, cursor: 'pointer', display: 'flex', padding: 6, flexShrink: 0 }}>
                       <IcTrash s={15} />
                     </button>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             );
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Termómetro de afinidad de una fuente: barra de color + puntaje + volumen. */
+function AffinityMeter({ t, aff }: { t: Theme; aff: FeedAffinity }) {
+  const color = aff.score >= 60 ? SN.brand.teal : aff.score >= 30 ? SN.brand.coral : '#ff5470';
+  const label = aff.score >= 60 ? 'alta' : aff.score >= 30 ? 'media' : 'baja';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+      <div style={{ flex: 1, maxWidth: 120, height: 5, borderRadius: 5, background: t.surface3, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${aff.score}%`, background: color }} />
+      </div>
+      <span style={{ fontSize: 11, color, fontWeight: 600 }}>afinidad {label}</span>
+      <span style={{ fontSize: 11, color: t.textMuted }}>· {aff.recentPerWeek}/sem</span>
     </div>
   );
 }
