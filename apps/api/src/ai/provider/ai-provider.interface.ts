@@ -5,6 +5,11 @@ export interface SummaryResult {
   tokensUsed: number | null;
 }
 
+export interface ChatResult {
+  text: string;
+  tokensUsed: number | null;
+}
+
 /**
  * Abstracción del proveedor de IA para TL;DR.
  * Implementaciones: ollama (default), anthropic, none.
@@ -16,6 +21,8 @@ export interface AiProvider {
   readonly modelLabel: string;
   /** Genera un TL;DR en español (1–2 frases). Lanza error si el proveedor falla. */
   summarize(title: string, text: string): Promise<SummaryResult>;
+  /** Llamada genérica (sistema + usuario) para otras tareas de IA. */
+  chat(system: string, user: string, opts?: { maxTokens?: number }): Promise<ChatResult>;
   /** false → el pipeline marca los artículos como 'skipped' sin llamar a nada. */
   isEnabled(): boolean;
 }

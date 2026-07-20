@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { AiProvider, SummaryResult } from './ai-provider.interface';
+import { AiProvider, ChatResult, SummaryResult } from './ai-provider.interface';
 import { SUMMARY_SYSTEM_PROMPT } from './prompt';
 
 // generoso: la primera petición de cada ciclo puede incluir la carga del modelo (~30 s)
@@ -34,25 +34,28 @@ export class OllamaProvider implements AiProvider {
     return true;
   }
 
-  async summarize(title: string, text: string): Promise<SummaryResult> {
+  /** Llamada genérica al modelo (sistema + usuario). */
+  async chat(system: string, user: string, opts?: { maxTokens?: number }): Promise<ChatResult> {
     // think:false — modelos híbridos (gemma4, qwen3…) pueden gastar todo el
     // num_predict en razonamiento y devolver content vacío si no se desactiva
     const data =
-      (await this.chat(title, text, true)) ??
-      (await this.chat(title, text, false)) ?? // Ollama viejo sin soporte de `think`
+      (await this.raw(system, user, opts?.maxTokens ?? 200, true)) ??
+      (await this.raw(system, user, opts?.maxTokens ?? 200, false)) ?? // Ollama viejo sin `think`
       (() => {
         throw new Error('Ollama rechazó la petición');
       })();
-    const tldr = data.message?.content?.trim();
-    if (!tldr) throw new Error('Ollama devolvió una respuesta vacía');
-    return {
-      tldr,
-      tokensUsed: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0) || null,
-    };
+    const text = data.message?.content?.trim();
+    if (!text) throw new Error('Ollama devolvió una respuesta vacía');
+    return { text, tokensUsed: (data.prompt_eval_count ?? 0) + (data.eval_count ?? 0) || null };
+  }
+
+  async summarize(title: string, text: string): Promise<SummaryResult> {
+    const { text: tldr, tokensUsed } = await this.chat(SUMMARY_SYSTEM_PROMPT, `Título: ${title}\n\nArtículo:\n${text}`);
+    return { tldr, tokensUsed };
   }
 
   /** Devuelve null si el servidor rechazó el parámetro `think` (retry sin él). */
-  private async chat(title: string, text: string, withThink: boolean): Promise<OllamaChatResponse | null> {
+  private async raw(system: string, user: string, numPredict: number, withThink: boolean): Promise<OllamaChatResponse | null> {
     const res = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST',
       signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -61,10 +64,10 @@ export class OllamaProvider implements AiProvider {
         model: this.model,
         stream: false,
         ...(withThink ? { think: false } : {}),
-        options: { temperature: 0.3, num_predict: 200 },
+        options: { temperature: 0.3, num_predict: numPredict },
         messages: [
-          { role: 'system', content: SUMMARY_SYSTEM_PROMPT },
-          { role: 'user', content: `Título: ${title}\n\nArtículo:\n${text}` },
+          { role: 'system', content: system },
+          { role: 'user', content: user },
         ],
       }),
     });

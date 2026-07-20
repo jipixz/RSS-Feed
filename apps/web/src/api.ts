@@ -47,6 +47,22 @@ export interface FeedInfo {
 
 export type ThemeKey = 'light' | 'sepia' | 'cafe' | 'dark' | 'black';
 
+export interface SuggestedItem {
+  title: string;
+  url: string;
+  folderLabel: string;
+  note: string;
+  added: boolean;
+}
+
+export interface AnalyzeResult {
+  score: number;
+  matched: string[];
+  sampleTitles: string[];
+  verdict: string | null;
+  aiEnabled: boolean;
+}
+
 export interface ArticlesPage {
   items: ArticleListItem[];
   nextCursor: string | null;
@@ -126,6 +142,12 @@ export const api = {
   },
   aiInfo(): Promise<{ provider: string; model: string; enabled: boolean; systemPrompt: string }> {
     return request('/api/ai/info');
+  },
+  suggestedFeeds(): Promise<{ groups: { folderLabel: string; feeds: SuggestedItem[] }[] }> {
+    return request('/api/discover');
+  },
+  analyzeFeed(url: string): Promise<AnalyzeResult> {
+    return request('/api/discover/analyze', { method: 'POST', body: JSON.stringify({ url }) });
   },
   importOpml(opml: string): Promise<{ folders: number; feeds: number; skipped: number }> {
     return request('/api/opml/import', { method: 'POST', body: JSON.stringify({ opml }) });

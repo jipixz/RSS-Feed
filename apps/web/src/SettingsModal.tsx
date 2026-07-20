@@ -1,6 +1,6 @@
 import { CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { SN, Theme } from './tokens';
-import { IcCode, IcCpu, IcDb, IcDownload, IcPlus, IcShield, IcTag, IcTrash, IcUpload, IcX } from './icons';
+import { IcCode, IcCpu, IcDb, IcDownload, IcPlus, IcShield, IcSpark, IcTag, IcTrash, IcUpload, IcX } from './icons';
 import { api, FeedInfo, Folder } from './api';
 import { GesturePrefs, SwipeAction } from './local-prefs';
 
@@ -15,7 +15,7 @@ const SWIPE_OPTIONS: { value: SwipeAction; label: string }[] = [
   { value: 'none', label: 'Nada' },
 ];
 
-export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, canInstall, onInstall, onClose, onChanged }: {
+export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, canInstall, onInstall, onDiscover, onClose, onChanged }: {
   t: Theme;
   phone: boolean;
   folders: Folder[];
@@ -24,6 +24,7 @@ export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, 
   onGestures: (g: GesturePrefs) => void;
   canInstall: boolean;
   onInstall: () => void;
+  onDiscover: () => void;
   onClose: () => void;
   onChanged: () => void;
 }) {
@@ -167,6 +168,17 @@ export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, 
               </button>
             </div>
           )}
+
+          {/* Descubrir fuentes sugeridas */}
+          <button onClick={onDiscover}
+            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 14px', marginTop: 8, borderRadius: SN.radius.lg, border: `1px solid ${t.border}`, background: t.surface1, cursor: 'pointer', textAlign: 'left' }}>
+            <span style={{ color: SN.brand.coral, display: 'flex', flexShrink: 0 }}><IcSpark s={18} /></span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 14, color: t.textPrimary }}>Descubrir fuentes</div>
+              <div style={{ fontSize: 12.5, color: t.textMuted }}>Sugeridas para tu perfil, con opinión de la IA</div>
+            </div>
+            <span style={{ color: t.textMuted, fontSize: 18, flexShrink: 0 }}>›</span>
+          </button>
 
           {/* Agregar fuente */}
           <div style={sectionTitle}>Agregar fuente</div>

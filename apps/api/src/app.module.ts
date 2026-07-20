@@ -13,6 +13,7 @@ import { FeedsModule } from './feeds/feeds.module';
 import { MutesModule } from './mutes/mutes.module';
 import { PrefsModule } from './prefs/prefs.module';
 import { DigestModule } from './digest/digest.module';
+import { DiscoverModule } from './discover/discover.module';
 import { HealthModule } from './health/health.module';
 import { RetentionModule } from './retention/retention.module';
 import { ApiKeyGuard } from './common/api-key.guard';
@@ -43,6 +44,7 @@ const webDist = join(__dirname, '..', '..', 'web', 'dist');
     MutesModule,
     PrefsModule,
     DigestModule,
+    DiscoverModule,
     HealthModule,
     RetentionModule,
   ],

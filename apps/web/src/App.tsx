@@ -7,6 +7,7 @@ import {
 } from './icons';
 import { api, ArticleDetail, ArticleListItem, DigestItem, FeedInfo, Folder, timeAgo } from './api';
 import { SettingsModal } from './SettingsModal';
+import { DiscoverModal } from './DiscoverModal';
 import { LiveConsole } from './LiveConsole';
 import {
   GesturePrefs, READING_SIZES, ReadingPrefs, loadGestures, loadReading, saveGestures, saveReading,
@@ -80,6 +81,7 @@ export default function App() {
   const [readMenuOpen, setReadMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showConsole, setShowConsole] = useState(false);
+  const [showDiscover, setShowDiscover] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [barsHidden, setBarsHidden] = useState(false);
@@ -95,7 +97,7 @@ export default function App() {
   const [readProgress, setReadProgress] = useState(0);
   const [backToast, setBackToast] = useState(false);
   const exitArmed = useRef(false);
-  const uiRef = useRef({ selectedId: null as string | null, sheetOpen: false, showSettings: false, showConsole: false });
+  const uiRef = useRef({ selectedId: null as string | null, sheetOpen: false, showSettings: false, showConsole: false, showDiscover: false });
 
   // ── carga inicial ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -208,8 +210,8 @@ export default function App() {
 
   // ── botón "atrás" del teléfono ────────────────────────────────────────────
   useEffect(() => {
-    uiRef.current = { selectedId, sheetOpen, showSettings, showConsole };
-  }, [selectedId, sheetOpen, showSettings, showConsole]);
+    uiRef.current = { selectedId, sheetOpen, showSettings, showConsole, showDiscover };
+  }, [selectedId, sheetOpen, showSettings, showConsole, showDiscover]);
 
   // El "atrás" cierra lo que esté abierto (artículo/paneles) en vez de salir de
   // la app; en la raíz, pide confirmación y sale al segundo "atrás".
@@ -218,6 +220,7 @@ export default function App() {
     const reguard = () => window.history.pushState({ senal: true }, '');
     const onPop = () => {
       const ui = uiRef.current;
+      if (ui.showDiscover) { setShowDiscover(false); exitArmed.current = false; reguard(); return; }
       if (ui.showConsole) { setShowConsole(false); exitArmed.current = false; reguard(); return; }
       if (ui.showSettings) { setShowSettings(false); exitArmed.current = false; reguard(); return; }
       if (ui.sheetOpen) { setSheetOpen(false); exitArmed.current = false; reguard(); return; }
@@ -928,6 +931,7 @@ export default function App() {
           onGestures={updateGestures}
           canInstall={!!installPrompt}
           onInstall={doInstall}
+          onDiscover={() => setShowDiscover(true)}
           onClose={() => setShowSettings(false)}
           onChanged={() => {
             void refreshFeeds();
@@ -938,6 +942,20 @@ export default function App() {
       )}
 
       {showConsole && <LiveConsole t={t} phone={phone} onClose={() => setShowConsole(false)} />}
+
+      {showDiscover && (
+        <DiscoverModal
+          t={t}
+          phone={phone}
+          folders={folders}
+          onClose={() => setShowDiscover(false)}
+          onChanged={() => {
+            void refreshFeeds();
+            void refreshFolders();
+            void loadList(true);
+          }}
+        />
+      )}
     </>
   );
 }
