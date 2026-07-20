@@ -140,7 +140,7 @@ export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,0.45)', display: 'grid', placeItems: phone ? 'stretch' : 'center', padding: phone ? 0 : 20 }}>
       <div onClick={(e) => e.stopPropagation()}
-        style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: phone ? 0 : 14, boxShadow: SN.shadow.lg, width: phone ? '100%' : 'min(600px, 100%)', maxHeight: phone ? '100%' : '88vh', height: phone ? '100%' : undefined, display: 'flex', flexDirection: 'column' }}>
+        style={{ background: t.bg, border: `1px solid ${t.border}`, borderRadius: phone ? 0 : 14, boxShadow: SN.shadow.lg, width: phone ? '100%' : 'min(600px, 100%)', maxHeight: phone ? '100%' : '88vh', height: phone ? '100%' : undefined, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: `1px solid ${t.border}`, flexShrink: 0 }}>
           <span style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 17, color: t.textPrimary }}>Ajustes</span>
           <button className="sn-iconbtn" onClick={onClose} style={{ width: 34, height: 34, display: 'grid', placeItems: 'center', borderRadius: SN.radius.base, border: `1px solid ${t.border}`, background: t.bg, color: t.textSecondary, cursor: 'pointer' }}><IcX s={16} /></button>
