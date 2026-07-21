@@ -20,8 +20,12 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   const port = Number(process.env.PORT ?? 3001);
-  await app.listen(port, '0.0.0.0');
-  new Logger('Bootstrap').log(`Señal API escuchando en http://0.0.0.0:${port}`);
+  // HOST=127.0.0.1 → solo accesible desde la propia máquina (el tunnel de
+  // Cloudflare corre en la Pi y conecta por localhost, así que sigue funcionando,
+  // pero se cierra el acceso directo por IP de LAN). Default 0.0.0.0 (no rompe nada).
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen(port, host);
+  new Logger('Bootstrap').log(`Señal API escuchando en http://${host}:${port}`);
 }
 
 void bootstrap();
