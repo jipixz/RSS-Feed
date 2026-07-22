@@ -2,6 +2,7 @@ import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { SN, Theme } from './tokens';
 import { IcSearch, IcSpark, IcX } from './icons';
 import { api } from './api';
+import { SearchSheet } from './SearchSheet';
 
 interface Sel { text: string; x: number; y: number }
 interface Result { loading: boolean; text?: string; error?: string; source: string }
@@ -18,6 +19,7 @@ export function SelectionTranslator({ t, phone, containerRef }: {
 }) {
   const [sel, setSel] = useState<Sel | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const [search, setSearch] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Detección por selectionchange (más fiable en móvil que mouseup/touchend)
@@ -52,14 +54,15 @@ export function SelectionTranslator({ t, phone, containerRef }: {
       .catch((err) => setResult({ loading: false, error: (err as Error).message, source: text }));
   };
 
-  const google = () => {
-    if (sel) window.open(`https://www.google.com/search?q=${encodeURIComponent(sel.text)}`, '_blank', 'noopener');
+  const lookup = () => {
+    if (!sel) return;
+    setSearch(sel.text);
     setSel(null);
   };
 
   const close = () => { setResult(null); setSel(null); };
 
-  if (!sel && !result) return null;
+  if (!sel && !result && !search) return null;
 
   // Barra al tono del tema: superficie elevada + contorno azul + sombra adaptativa
   const barShadow = t.isDark
@@ -75,13 +78,13 @@ export function SelectionTranslator({ t, phone, containerRef }: {
       <div data-seltool style={{ position: 'fixed', left: 12, right: 12, bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 70, display: 'flex', alignItems: 'center', gap: 6, background: t.surface3, border: `1.5px solid ${t.activeBar}`, borderRadius: 14, padding: '8px 8px 8px 14px', boxShadow: barShadow }}>
         <span style={{ flex: 1, minWidth: 0, color: t.textSecondary, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>“{sel.text}”</span>
         <button data-seltool style={{ ...barBtn, background: SN.brand.blue, color: '#fff' }} onClick={translate}><IcSpark s={14} /> Traducir</button>
-        <button data-seltool style={{ ...barBtn, width: 40, padding: 0, justifyContent: 'center' }} onClick={google} title="Buscar en Google"><IcSearch s={15} /></button>
+        <button data-seltool style={{ ...barBtn, width: 40, padding: 0, justifyContent: 'center' }} onClick={lookup} title="Buscar"><IcSearch s={15} /></button>
       </div>
     ) : (
       <div data-seltool style={{ position: 'fixed', top: sel.y < 96 ? sel.y + 26 : sel.y - 48, left: sel.x, transform: 'translateX(-50%)', zIndex: 70, display: 'flex', gap: 2, background: t.textPrimary, borderRadius: SN.radius.full, padding: 3, boxShadow: SN.shadow.lg }}>
         <button data-seltool style={pillBtn} onClick={translate}><IcSpark s={13} /> Traducir</button>
         <span style={{ width: 1, background: t.textMuted, opacity: 0.4, margin: '5px 0' }} />
-        <button data-seltool style={pillBtn} onClick={google}><IcSearch s={12} /> Google</button>
+        <button data-seltool style={pillBtn} onClick={lookup}><IcSearch s={12} /> Buscar</button>
       </div>
     )
   );
@@ -111,5 +114,11 @@ export function SelectionTranslator({ t, phone, containerRef }: {
     </>
   );
 
-  return <>{trigger}{resultView}</>;
+  return (
+    <>
+      {trigger}
+      {resultView}
+      {search && <SearchSheet t={t} phone={phone} query={search} onClose={() => setSearch(null)} />}
+    </>
+  );
 }

@@ -52,6 +52,26 @@ export interface FeedAffinity {
   recentPerWeek: number;
 }
 
+export interface DdgResult {
+  heading: string | null;
+  abstract: string | null;
+  source: string | null;
+  url: string | null;
+  answer: string | null;
+  definition: string | null;
+  related: { text: string; url: string }[];
+}
+
+export interface WikiResult {
+  found: boolean;
+  lang?: string;
+  title?: string;
+  extract?: string;
+  thumbnail?: string | null;
+  url?: string;
+  others?: { title: string; url: string }[];
+}
+
 export type ThemeKey = 'light' | 'sepia' | 'cafe' | 'dark' | 'black';
 
 export interface SuggestedItem {
@@ -152,6 +172,12 @@ export const api = {
   },
   translate(text: string): Promise<{ translation: string }> {
     return request('/api/ai/translate', { method: 'POST', body: JSON.stringify({ text }) });
+  },
+  searchDdg(q: string): Promise<DdgResult> {
+    return request(`/api/search/ddg?q=${encodeURIComponent(q)}`);
+  },
+  searchWikipedia(q: string): Promise<WikiResult> {
+    return request(`/api/search/wikipedia?q=${encodeURIComponent(q)}`);
   },
   suggestedFeeds(): Promise<{ groups: { folderLabel: string; feeds: SuggestedItem[] }[] }> {
     return request('/api/discover');
