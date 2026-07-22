@@ -1,65 +1,55 @@
-import { CSSProperties, useEffect, useState } from 'react';
+import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { SN, Theme } from './tokens';
 import { IcSearch, IcSpark, IcX } from './icons';
 import { api } from './api';
 
 interface Sel { text: string; x: number; y: number }
-interface Result { loading: boolean; text?: string; error?: string }
+interface Result { loading: boolean; text?: string; error?: string; source: string }
 
 /**
- * Lectura asistida: al seleccionar texto dentro del artículo aparece una píldora
- * flotante para traducir con IA (bajo demanda) o buscar en Google. El original se
- * queda en el artículo → traducción bilingüe de facto.
+ * Lectura asistida. En móvil: barra fija abajo (para no chocar con el menú
+ * nativo del navegador que sale sobre la selección). En escritorio: píldora
+ * flotante anclada a la selección. Traduce con IA bajo demanda o busca en Google.
  */
-export function SelectionTranslator({ t, containerRef }: {
+export function SelectionTranslator({ t, phone, containerRef }: {
   t: Theme;
+  phone: boolean;
   containerRef: React.RefObject<HTMLElement | null>;
 }) {
   const [sel, setSel] = useState<Sel | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  // Detectar selección al soltar el mouse/dedo
+  // Detección por selectionchange (más fiable en móvil que mouseup/touchend)
   useEffect(() => {
-    const pick = (e: Event) => {
-      // No cerrar si tocaron nuestra propia UI
-      if ((e.target as HTMLElement)?.closest?.('[data-seltool]')) return;
+    const check = () => {
       const s = window.getSelection();
       const text = s?.toString().trim() ?? '';
       if (!s || s.isCollapsed || text.length < 2 || !containerRef.current?.contains(s.anchorNode)) {
         setSel(null);
-        setResult(null);
         return;
       }
       const rect = s.getRangeAt(0).getBoundingClientRect();
       setSel({ text, x: rect.left + rect.width / 2, y: rect.top });
-      setResult(null);
     };
-    document.addEventListener('mouseup', pick);
-    document.addEventListener('touchend', pick);
+    const onChange = () => {
+      clearTimeout(timer.current);
+      timer.current = setTimeout(check, 220);
+    };
+    document.addEventListener('selectionchange', onChange);
     return () => {
-      document.removeEventListener('mouseup', pick);
-      document.removeEventListener('touchend', pick);
+      document.removeEventListener('selectionchange', onChange);
+      clearTimeout(timer.current);
     };
   }, [containerRef]);
 
-  // Cerrar al scrollear el artículo (la selección se desalinea)
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el || !sel) return;
-    const close = () => { setSel(null); setResult(null); };
-    el.addEventListener('scroll', close, { passive: true });
-    return () => el.removeEventListener('scroll', close);
-  }, [sel, containerRef]);
-
-  const translate = async () => {
+  const translate = () => {
     if (!sel) return;
-    setResult({ loading: true });
-    try {
-      const { translation } = await api.translate(sel.text);
-      setResult({ loading: false, text: translation });
-    } catch (err) {
-      setResult({ loading: false, error: (err as Error).message });
-    }
+    const text = sel.text; // capturar antes de que la selección se limpie al tocar
+    setResult({ loading: true, source: text });
+    void api.translate(text)
+      .then(({ translation }) => setResult({ loading: false, text: translation, source: text }))
+      .catch((err) => setResult({ loading: false, error: (err as Error).message, source: text }));
   };
 
   const google = () => {
@@ -67,43 +57,53 @@ export function SelectionTranslator({ t, containerRef }: {
     setSel(null);
   };
 
-  if (!sel) return null;
+  const close = () => { setResult(null); setSel(null); };
 
-  const nearTop = sel.y < 96;
-  const pillTop = nearTop ? sel.y + 26 : sel.y - 46;
-  const pillBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 5, height: 30, padding: '0 11px', borderRadius: SN.radius.full, border: 'none', background: 'transparent', color: t.bg, fontFamily: SN.font.body, fontSize: 12.5, fontWeight: 600, cursor: 'pointer' };
+  if (!sel && !result) return null;
 
-  return (
+  const pillBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 5, height: 34, padding: '0 14px', borderRadius: SN.radius.full, border: 'none', background: 'transparent', color: t.bg, fontFamily: SN.font.body, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' };
+
+  // ── el disparador (barra abajo en móvil / píldora flotante en escritorio) ──
+  const trigger = sel && !result && (
+    phone ? (
+      <div data-seltool style={{ position: 'fixed', left: 12, right: 12, bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 70, display: 'flex', alignItems: 'center', gap: 6, background: t.textPrimary, borderRadius: 14, padding: '8px 8px 8px 14px', boxShadow: SN.shadow.lg }}>
+        <span style={{ flex: 1, minWidth: 0, color: t.bg, opacity: 0.7, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>“{sel.text}”</span>
+        <button data-seltool style={{ ...pillBtn, background: SN.brand.blue, color: '#fff' }} onClick={translate}><IcSpark s={14} /> Traducir</button>
+        <button data-seltool style={{ ...pillBtn, width: 40, padding: 0, justifyContent: 'center' }} onClick={google} title="Buscar en Google"><IcSearch s={15} /></button>
+      </div>
+    ) : (
+      <div data-seltool style={{ position: 'fixed', top: sel.y < 96 ? sel.y + 26 : sel.y - 48, left: sel.x, transform: 'translateX(-50%)', zIndex: 70, display: 'flex', gap: 2, background: t.textPrimary, borderRadius: SN.radius.full, padding: 3, boxShadow: SN.shadow.lg }}>
+        <button data-seltool style={pillBtn} onClick={translate}><IcSpark s={13} /> Traducir</button>
+        <span style={{ width: 1, background: t.textMuted, opacity: 0.4, margin: '5px 0' }} />
+        <button data-seltool style={pillBtn} onClick={google}><IcSearch s={12} /> Google</button>
+      </div>
+    )
+  );
+
+  // ── el resultado (bottom sheet en móvil / card centrada en escritorio) ──
+  const resultView = result && (
     <>
-      {/* píldora de acciones */}
-      {!result && (
-        <div data-seltool style={{ position: 'fixed', top: pillTop, left: sel.x, transform: 'translateX(-50%)', zIndex: 70, display: 'flex', gap: 2, background: t.textPrimary, borderRadius: SN.radius.full, padding: 3, boxShadow: SN.shadow.lg }}>
-          <button data-seltool style={pillBtn} onClick={translate}><IcSpark s={13} /> Traducir</button>
-          <span style={{ width: 1, background: t.textMuted, opacity: 0.4, margin: '4px 0' }} />
-          <button data-seltool style={pillBtn} onClick={google}><IcSearch s={12} /> Google</button>
+      <div onClick={close} style={{ position: 'fixed', inset: 0, zIndex: 69, background: phone ? 'rgba(0,0,0,0.35)' : 'transparent' }} />
+      <div data-seltool style={phone
+        ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 70, background: t.bg, borderTop: `1px solid ${t.border}`, borderRadius: '16px 16px 0 0', boxShadow: SN.shadow.lg, padding: '12px 16px calc(20px + env(safe-area-inset-bottom))', maxHeight: '60vh', overflowY: 'auto' }
+        : { position: 'fixed', top: Math.min(Math.max(sel ? sel.y - 20 : 80, 60), window.innerHeight - 260), left: '50%', transform: 'translateX(-50%)', zIndex: 70, width: 'min(440px, 92vw)', maxHeight: 320, overflowY: 'auto', background: t.bg, border: `1px solid ${t.border}`, borderRadius: SN.radius.lg, boxShadow: SN.shadow.lg, padding: '12px 14px' }}>
+        {phone && <div style={{ width: 40, height: 4, borderRadius: 4, background: t.border, margin: '0 auto 12px' }} />}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: t.tldrText }}>
+          <IcSpark s={14} />
+          <span style={{ fontFamily: SN.font.body, fontWeight: 600, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Traducción · IA</span>
+          <button data-seltool onClick={close} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: t.textMuted, cursor: 'pointer', display: 'flex' }}><IcX s={16} /></button>
         </div>
-      )}
-
-      {/* popup con la traducción */}
-      {result && (
-        <>
-          <div onClick={() => { setSel(null); setResult(null); }} style={{ position: 'fixed', inset: 0, zIndex: 69 }} />
-          <div data-seltool style={{ position: 'fixed', top: Math.min(Math.max(pillTop, 60), window.innerHeight - 240), left: '50%', transform: 'translateX(-50%)', zIndex: 70, width: 'min(440px, 92vw)', maxHeight: 300, overflowY: 'auto', background: t.bg, border: `1px solid ${t.border}`, borderRadius: SN.radius.lg, boxShadow: SN.shadow.lg, padding: '12px 14px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: t.tldrText }}>
-              <IcSpark s={14} />
-              <span style={{ fontFamily: SN.font.body, fontWeight: 600, fontSize: 11, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Traducción · IA</span>
-              <button data-seltool onClick={() => { setSel(null); setResult(null); }} style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: t.textMuted, cursor: 'pointer', display: 'flex' }}><IcX s={15} /></button>
-            </div>
-            {result.loading ? (
-              <div style={{ fontSize: 13, color: t.textTertiary }}>Traduciendo… (la primera del día carga el modelo, ~30 s; luego es rápido)</div>
-            ) : result.error ? (
-              <div style={{ fontSize: 13, color: '#ff5470' }}>{result.error}</div>
-            ) : (
-              <div style={{ fontFamily: SN.font.body, fontSize: 14.5, lineHeight: 1.6, color: t.textPrimary, whiteSpace: 'pre-wrap' }}>{result.text}</div>
-            )}
-          </div>
-        </>
-      )}
+        <div style={{ fontSize: 12, color: t.textMuted, fontStyle: 'italic', marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>“{result.source}”</div>
+        {result.loading ? (
+          <div style={{ fontSize: 13, color: t.textTertiary }}>Traduciendo… (la primera del día carga el modelo, ~30 s; luego es rápido)</div>
+        ) : result.error ? (
+          <div style={{ fontSize: 13, color: '#ff5470' }}>{result.error}</div>
+        ) : (
+          <div style={{ fontFamily: SN.font.body, fontSize: 15, lineHeight: 1.6, color: t.textPrimary, whiteSpace: 'pre-wrap' }}>{result.text}</div>
+        )}
+      </div>
     </>
   );
+
+  return <>{trigger}{resultView}</>;
 }

@@ -942,7 +942,7 @@ export default function App() {
         />
       )}
 
-      {selectedId && <SelectionTranslator t={t} containerRef={articlePaneRef} />}
+      {selectedId && <SelectionTranslator t={t} phone={phone} containerRef={articlePaneRef} />}
 
       {showConsole && <LiveConsole t={t} phone={phone} onClose={() => setShowConsole(false)} />}
 
