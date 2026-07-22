@@ -35,12 +35,14 @@ export class OllamaProvider implements AiProvider {
   }
 
   /** Llamada genérica al modelo (sistema + usuario). */
-  async chat(system: string, user: string, opts?: { maxTokens?: number }): Promise<ChatResult> {
+  async chat(system: string, user: string, opts?: { maxTokens?: number; timeoutMs?: number }): Promise<ChatResult> {
+    const maxTokens = opts?.maxTokens ?? 200;
+    const timeoutMs = opts?.timeoutMs ?? TIMEOUT_MS;
     // think:false — modelos híbridos (gemma4, qwen3…) pueden gastar todo el
     // num_predict en razonamiento y devolver content vacío si no se desactiva
     const data =
-      (await this.raw(system, user, opts?.maxTokens ?? 200, true)) ??
-      (await this.raw(system, user, opts?.maxTokens ?? 200, false)) ?? // Ollama viejo sin `think`
+      (await this.raw(system, user, maxTokens, timeoutMs, true)) ??
+      (await this.raw(system, user, maxTokens, timeoutMs, false)) ?? // Ollama viejo sin `think`
       (() => {
         throw new Error('Ollama rechazó la petición');
       })();
@@ -55,10 +57,10 @@ export class OllamaProvider implements AiProvider {
   }
 
   /** Devuelve null si el servidor rechazó el parámetro `think` (retry sin él). */
-  private async raw(system: string, user: string, numPredict: number, withThink: boolean): Promise<OllamaChatResponse | null> {
+  private async raw(system: string, user: string, numPredict: number, timeoutMs: number, withThink: boolean): Promise<OllamaChatResponse | null> {
     const res = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST',
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         model: this.model,

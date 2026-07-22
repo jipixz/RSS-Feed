@@ -22,7 +22,7 @@ export interface AiProvider {
   /** Genera un TL;DR en español (1–2 frases). Lanza error si el proveedor falla. */
   summarize(title: string, text: string): Promise<SummaryResult>;
   /** Llamada genérica (sistema + usuario) para otras tareas de IA. */
-  chat(system: string, user: string, opts?: { maxTokens?: number }): Promise<ChatResult>;
+  chat(system: string, user: string, opts?: { maxTokens?: number; timeoutMs?: number }): Promise<ChatResult>;
   /** false → el pipeline marca los artículos como 'skipped' sin llamar a nada. */
   isEnabled(): boolean;
 }

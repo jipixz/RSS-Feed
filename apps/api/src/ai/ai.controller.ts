@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Inject, MessageEvent, Post, Sse } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, Logger, MessageEvent, Post, ServiceUnavailableException, Sse } from '@nestjs/common';
 import { IsString, Length } from 'class-validator';
 import { Observable, interval, map, merge } from 'rxjs';
 import { AiEventsService } from './ai-events.service';
@@ -34,12 +34,29 @@ export class AiController {
     };
   }
 
+  private readonly logger = new Logger(AiController.name);
+
   /** Traduce/explica una selección de texto bajo demanda (para lectura asistida). */
   @Post('translate')
   async translate(@Body() body: TranslateDto): Promise<{ translation: string }> {
     if (!this.provider.isEnabled()) throw new BadRequestException('La IA está desactivada');
-    const { text } = await this.provider.chat(TRANSLATE_SYSTEM, body.text, { maxTokens: 700 });
-    return { translation: text };
+    try {
+      // timeout amplio: la carga en frío del modelo + una cola de resúmenes pueden tardar
+      const { text } = await this.provider.chat(TRANSLATE_SYSTEM, body.text, { maxTokens: 700, timeoutMs: 120_000 });
+      return { translation: text };
+    } catch (err) {
+      const e = err as Error;
+      this.logger.warn(`Traducción falló: ${e.name}: ${e.message}`);
+      if (e.name === 'TimeoutError' || e.name === 'AbortError') {
+        throw new ServiceUnavailableException(
+          'El modelo tardó demasiado (se está cargando o está ocupado resumiendo). Espera unos segundos y reintenta.',
+        );
+      }
+      if (e.message.includes('fetch failed')) {
+        throw new ServiceUnavailableException('No se pudo conectar con Ollama — ¿la PC del modelo está encendida?');
+      }
+      throw new ServiceUnavailableException(`No se pudo traducir: ${e.message}`);
+    }
   }
 
   /** Stream de eventos de resumen en vivo (Server-Sent Events). */
