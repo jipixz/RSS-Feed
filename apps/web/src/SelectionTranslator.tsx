@@ -61,15 +61,21 @@ export function SelectionTranslator({ t, phone, containerRef }: {
 
   if (!sel && !result) return null;
 
-  const pillBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 5, height: 34, padding: '0 14px', borderRadius: SN.radius.full, border: 'none', background: 'transparent', color: t.bg, fontFamily: SN.font.body, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' };
+  // Barra al tono del tema: superficie elevada + contorno azul + sombra adaptativa
+  const barShadow = t.isDark
+    ? `0 4px 18px rgba(49,173,255,0.16), 0 6px 20px rgba(0,0,0,0.55)`
+    : `0 2px 6px rgba(15,27,35,0.10), 0 10px 26px rgba(15,27,35,0.18)`;
+
+  const barBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 5, height: 34, padding: '0 14px', borderRadius: SN.radius.full, border: 'none', background: 'transparent', color: t.textSecondary, fontFamily: SN.font.body, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' };
+  const pillBtn: CSSProperties = { ...barBtn, color: t.bg };
 
   // ── el disparador (barra abajo en móvil / píldora flotante en escritorio) ──
   const trigger = sel && !result && (
     phone ? (
-      <div data-seltool style={{ position: 'fixed', left: 12, right: 12, bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 70, display: 'flex', alignItems: 'center', gap: 6, background: t.textPrimary, borderRadius: 14, padding: '8px 8px 8px 14px', boxShadow: SN.shadow.lg }}>
-        <span style={{ flex: 1, minWidth: 0, color: t.bg, opacity: 0.7, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>“{sel.text}”</span>
-        <button data-seltool style={{ ...pillBtn, background: SN.brand.blue, color: '#fff' }} onClick={translate}><IcSpark s={14} /> Traducir</button>
-        <button data-seltool style={{ ...pillBtn, width: 40, padding: 0, justifyContent: 'center' }} onClick={google} title="Buscar en Google"><IcSearch s={15} /></button>
+      <div data-seltool style={{ position: 'fixed', left: 12, right: 12, bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 70, display: 'flex', alignItems: 'center', gap: 6, background: t.surface3, border: `1.5px solid ${t.activeBar}`, borderRadius: 14, padding: '8px 8px 8px 14px', boxShadow: barShadow }}>
+        <span style={{ flex: 1, minWidth: 0, color: t.textSecondary, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>“{sel.text}”</span>
+        <button data-seltool style={{ ...barBtn, background: SN.brand.blue, color: '#fff' }} onClick={translate}><IcSpark s={14} /> Traducir</button>
+        <button data-seltool style={{ ...barBtn, width: 40, padding: 0, justifyContent: 'center' }} onClick={google} title="Buscar en Google"><IcSearch s={15} /></button>
       </div>
     ) : (
       <div data-seltool style={{ position: 'fixed', top: sel.y < 96 ? sel.y + 26 : sel.y - 48, left: sel.x, transform: 'translateX(-50%)', zIndex: 70, display: 'flex', gap: 2, background: t.textPrimary, borderRadius: SN.radius.full, padding: 3, boxShadow: SN.shadow.lg }}>
@@ -85,7 +91,7 @@ export function SelectionTranslator({ t, phone, containerRef }: {
     <>
       <div onClick={close} style={{ position: 'fixed', inset: 0, zIndex: 69, background: phone ? 'rgba(0,0,0,0.35)' : 'transparent' }} />
       <div data-seltool style={phone
-        ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 70, background: t.bg, borderTop: `1px solid ${t.border}`, borderRadius: '16px 16px 0 0', boxShadow: SN.shadow.lg, padding: '12px 16px calc(20px + env(safe-area-inset-bottom))', maxHeight: '60vh', overflowY: 'auto' }
+        ? { position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 70, background: t.bg, borderTop: `1.5px solid ${t.activeBar}`, borderRadius: '16px 16px 0 0', boxShadow: barShadow, padding: '12px 16px calc(20px + env(safe-area-inset-bottom))', maxHeight: '60vh', overflowY: 'auto' }
         : { position: 'fixed', top: Math.min(Math.max(sel ? sel.y - 20 : 80, 60), window.innerHeight - 260), left: '50%', transform: 'translateX(-50%)', zIndex: 70, width: 'min(440px, 92vw)', maxHeight: 320, overflowY: 'auto', background: t.bg, border: `1px solid ${t.border}`, borderRadius: SN.radius.lg, boxShadow: SN.shadow.lg, padding: '12px 14px' }}>
         {phone && <div style={{ width: 40, height: 4, borderRadius: 4, background: t.border, margin: '0 auto 12px' }} />}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, color: t.tldrText }}>
