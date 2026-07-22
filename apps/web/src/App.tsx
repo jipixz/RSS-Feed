@@ -9,6 +9,7 @@ import { api, ArticleDetail, ArticleListItem, DigestItem, FeedInfo, Folder, time
 import { SettingsModal } from './SettingsModal';
 import { DiscoverModal } from './DiscoverModal';
 import { LiveConsole } from './LiveConsole';
+import { SelectionTranslator } from './SelectionTranslator';
 import {
   GesturePrefs, READING_SIZES, ReadingPrefs, loadGestures, loadReading, saveGestures, saveReading,
 } from './local-prefs';
@@ -940,6 +941,8 @@ export default function App() {
           }}
         />
       )}
+
+      {selectedId && <SelectionTranslator t={t} containerRef={articlePaneRef} />}
 
       {showConsole && <LiveConsole t={t} phone={phone} onClose={() => setShowConsole(false)} />}
 

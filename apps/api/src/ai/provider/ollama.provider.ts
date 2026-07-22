@@ -63,6 +63,7 @@ export class OllamaProvider implements AiProvider {
       body: JSON.stringify({
         model: this.model,
         stream: false,
+        keep_alive: '30m',                              // mantener el modelo en RAM entre lecturas
         ...(withThink ? { think: false } : {}),
         options: { temperature: 0.3, num_predict: numPredict },
         messages: [

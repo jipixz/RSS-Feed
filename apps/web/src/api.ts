@@ -150,6 +150,9 @@ export const api = {
   aiInfo(): Promise<{ provider: string; model: string; enabled: boolean; systemPrompt: string }> {
     return request('/api/ai/info');
   },
+  translate(text: string): Promise<{ translation: string }> {
+    return request('/api/ai/translate', { method: 'POST', body: JSON.stringify({ text }) });
+  },
   suggestedFeeds(): Promise<{ groups: { folderLabel: string; feeds: SuggestedItem[] }[] }> {
     return request('/api/discover');
   },
