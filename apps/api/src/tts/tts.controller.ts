@@ -1,5 +1,5 @@
-import { Controller, Get, NotFoundException, Param, Post, Query, Res } from '@nestjs/common';
-import { IsIn, IsOptional, Matches } from 'class-validator';
+import { Body, Controller, Get, NotFoundException, Param, Post, Query, Res, ServiceUnavailableException } from '@nestjs/common';
+import { IsIn, IsOptional, IsString, Length, Matches } from 'class-validator';
 import type { Response } from 'express';
 import { existsSync } from 'fs';
 import { TtsEngine, TtsService } from './tts.service';
@@ -7,6 +7,16 @@ import { TtsEngine, TtsService } from './tts.service';
 class EngineQueryDto {
   @IsIn(['piper', 'kokoro'])
   engine!: TtsEngine;
+
+  @IsOptional()
+  @Matches(/^[a-zA-Z0-9._-]+$/)
+  voice?: string;
+}
+
+class SayDto {
+  @IsString()
+  @Length(1, 3000)
+  text!: string;
 
   @IsOptional()
   @Matches(/^[a-zA-Z0-9._-]+$/)
@@ -21,6 +31,19 @@ export class TtsController {
   @Get('voices')
   voices() {
     return this.tts.voices();
+  }
+
+  /** TTS al vuelo para el minichat (Kokoro, sin caché). Va ANTES de :id. */
+  @Post('say')
+  async say(@Body() body: SayDto, @Res() res: Response) {
+    try {
+      const audio = await this.tts.say(body.text, body.voice);
+      res.setHeader('content-type', 'audio/mpeg');
+      res.setHeader('cache-control', 'no-store');
+      res.send(audio);
+    } catch (err) {
+      throw new ServiceUnavailableException((err as Error).message);
+    }
   }
 
   /** Genera (o reutiliza) el audio del artículo con el motor y voz elegidos. */

@@ -192,18 +192,18 @@ export class TtsService {
   }
 
   // ── Kokoro: servidor OpenAI-compatible en la PC ────────────────────────────
-  private async generateKokoro(id: string, voice: string, text: string): Promise<'mp3'> {
+  private async kokoroSynth(text: string, voice: string, timeoutMs = KOKORO_TIMEOUT_MS): Promise<Buffer> {
     const baseUrl = (this.config.get<string>('TTS_KOKORO_URL') ?? 'http://localhost:8880').replace(/\/+$/, '');
 
     const res = await fetch(`${baseUrl}/v1/audio/speech`, {
       method: 'POST',
-      signal: AbortSignal.timeout(KOKORO_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ model: 'kokoro', voice, input: text, response_format: 'mp3' }),
     }).catch((err: Error) => {
       throw new Error(
         err.name === 'TimeoutError'
-          ? 'Kokoro tardó demasiado — artículo muy largo o la PC está ocupada'
+          ? 'Kokoro tardó demasiado — texto muy largo o la PC está ocupada'
           : `No se pudo conectar con Kokoro (${err.message}) — ¿está corriendo en la PC?`,
       );
     });
@@ -211,7 +211,19 @@ export class TtsService {
 
     const audio = Buffer.from(await res.arrayBuffer());
     if (audio.length < 1000) throw new Error('Kokoro devolvió un audio vacío');
+    return audio;
+  }
+
+  private async generateKokoro(id: string, voice: string, text: string): Promise<'mp3'> {
+    const audio = await this.kokoroSynth(text, voice);
     await writeFile(this.filePath(id, 'kokoro', voice, 'mp3'), audio);
     return 'mp3';
+  }
+
+  /** TTS al vuelo (minichat): sintetiza con Kokoro y devuelve el mp3 sin cachear. */
+  async say(text: string, voiceRaw?: string): Promise<Buffer> {
+    const voice = this.resolveVoice('kokoro', voiceRaw);
+    // timeout corto: son textos breves; si Kokoro está frío, la 1ª tarda unos s más
+    return this.kokoroSynth(text, voice, 90_000);
   }
 }

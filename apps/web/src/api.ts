@@ -67,6 +67,11 @@ export interface VoiceOption {
   label: string;
 }
 
+export interface ChatTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface DdgResult {
   heading: string | null;
   abstract: string | null;
@@ -187,6 +192,22 @@ export const api = {
   },
   translate(text: string): Promise<{ translation: string }> {
     return request('/api/ai/translate', { method: 'POST', body: JSON.stringify({ text }) });
+  },
+  aiChat(messages: ChatTurn[]): Promise<{ reply: string }> {
+    return request('/api/ai/chat', { method: 'POST', body: JSON.stringify({ messages }) });
+  },
+  /** TTS al vuelo con Kokoro; devuelve el mp3 como Blob (sin caché en server). */
+  async ttsSay(text: string, voice?: string): Promise<Blob> {
+    const res = await fetch('/api/tts/say', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text, ...(voice ? { voice } : {}) }),
+    });
+    if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(body?.message ?? `Error ${res.status}`);
+    }
+    return res.blob();
   },
   health(): Promise<{ status: 'ok'; version: string }> {
     return request('/api/health');

@@ -2,13 +2,14 @@ import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from
 import DOMPurify from 'dompurify';
 import { SN, THEMES, THEME_LABELS, ThemeKey } from './tokens';
 import {
-  IcActivity, IcBack, IcCheck, IcCircle, IcCode, IcCpu, IcDb, IcExt, IcFilter, IcGear, IcInbox,
+  IcActivity, IcBack, IcChat, IcCheck, IcCircle, IcCode, IcCpu, IcDb, IcExt, IcFilter, IcGear, IcInbox,
   IcPalette, IcRefresh, IcSearch, IcShield, IcSpark, IcStar, IcStarF, IcTag, IcType, IcX, LogoMark,
 } from './icons';
 import { api, ArticleDetail, ArticleListItem, DigestItem, FeedInfo, Folder, timeAgo } from './api';
 import { SettingsModal } from './SettingsModal';
 import { DiscoverModal } from './DiscoverModal';
 import { LiveConsole } from './LiveConsole';
+import { ChatSheet } from './ChatSheet';
 import { SelectionTranslator } from './SelectionTranslator';
 import { AudioPlayer } from './AudioPlayer';
 import {
@@ -83,6 +84,7 @@ export default function App() {
   const [readMenuOpen, setReadMenuOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showConsole, setShowConsole] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [showDiscover, setShowDiscover] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -99,7 +101,7 @@ export default function App() {
   const [readProgress, setReadProgress] = useState(0);
   const [backToast, setBackToast] = useState(false);
   const exitArmed = useRef(false);
-  const uiRef = useRef({ selectedId: null as string | null, sheetOpen: false, showSettings: false, showConsole: false, showDiscover: false });
+  const uiRef = useRef({ selectedId: null as string | null, sheetOpen: false, showSettings: false, showConsole: false, showDiscover: false, showChat: false });
 
   // ── carga inicial ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -212,8 +214,8 @@ export default function App() {
 
   // ── botón "atrás" del teléfono ────────────────────────────────────────────
   useEffect(() => {
-    uiRef.current = { selectedId, sheetOpen, showSettings, showConsole, showDiscover };
-  }, [selectedId, sheetOpen, showSettings, showConsole, showDiscover]);
+    uiRef.current = { selectedId, sheetOpen, showSettings, showConsole, showDiscover, showChat };
+  }, [selectedId, sheetOpen, showSettings, showConsole, showDiscover, showChat]);
 
   // El "atrás" cierra lo que esté abierto (artículo/paneles) en vez de salir de
   // la app; en la raíz, pide confirmación y sale al segundo "atrás".
@@ -223,6 +225,7 @@ export default function App() {
     const onPop = () => {
       const ui = uiRef.current;
       if (ui.showDiscover) { setShowDiscover(false); exitArmed.current = false; reguard(); return; }
+      if (ui.showChat) { setShowChat(false); exitArmed.current = false; reguard(); return; }
       if (ui.showConsole) { setShowConsole(false); exitArmed.current = false; reguard(); return; }
       if (ui.showSettings) { setShowSettings(false); exitArmed.current = false; reguard(); return; }
       if (ui.sheetOpen) { setSheetOpen(false); exitArmed.current = false; reguard(); return; }
@@ -462,6 +465,7 @@ export default function App() {
             <IcCheck s={15} />Marcar todo leído
           </button>
         )}
+        <button className="sn-iconbtn" style={iconBtn} onClick={() => setShowChat(true)} title="Minichat con la IA"><IcChat s={17} /></button>
         <button className="sn-iconbtn" style={iconBtn} onClick={() => setShowConsole(true)} title="Consola IA en vivo"><IcActivity s={17} /></button>
         <button className="sn-iconbtn" style={iconBtn} onClick={() => setShowSettings(true)} title="Ajustes"><IcGear s={17} /></button>
         <button className="sn-iconbtn" style={iconBtn} onClick={() => { setThemeMenuOpen((v) => !v); setReadMenuOpen(false); }} title="Tema"><IcPalette s={17} /></button>
@@ -949,6 +953,7 @@ export default function App() {
       {selectedId && <SelectionTranslator t={t} phone={phone} containerRef={articlePaneRef} />}
 
       {showConsole && <LiveConsole t={t} phone={phone} onClose={() => setShowConsole(false)} />}
+      {showChat && <ChatSheet t={t} phone={phone} onClose={() => setShowChat(false)} />}
 
       {showDiscover && (
         <DiscoverModal
