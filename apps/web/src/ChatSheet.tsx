@@ -123,38 +123,45 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
       <div onClick={(e) => e.stopPropagation()}
         style={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: t.bg, border: phone ? 'none' : `1px solid ${t.border}`, borderRadius: phone ? 0 : SN.radius.xl, boxShadow: SN.shadow.lg, width: phone ? '100%' : 'min(620px, 92vw)', height: phone ? '100%' : 'min(680px, 90vh)', overflow: 'hidden' }}>
 
-        {/* header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: `1px solid ${t.border}`, background: t.surface1, flexShrink: 0 }}>
-          <span style={{ color: SN.brand.teal, display: 'flex' }}><IcSpark s={17} /></span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 15, color: t.textPrimary }}>Minichat</div>
-            <div style={{ fontSize: 11, color: t.textMuted }}>
-              {mode === 'chat' ? 'gemma en tu PC · contexto ligero (12 turnos)' : 'lo que escribas se lee en voz alta'}
+        {/* header: en móvil se parte en dos filas para que nada se apachurre */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '10px 12px', borderBottom: `1px solid ${t.border}`, background: t.surface1, flexShrink: 0, paddingTop: phone ? 'calc(10px + env(safe-area-inset-top))' : 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ color: SN.brand.teal, display: 'flex', flexShrink: 0 }}><IcSpark s={17} /></span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 15, color: t.textPrimary }}>Minichat</div>
+              {!phone && (
+                <div style={{ fontSize: 11, color: t.textMuted, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {mode === 'chat' ? 'gemma en tu PC · contexto ligero (12 turnos)' : 'lo que escribas se lee en voz alta'}
+                </div>
+              )}
             </div>
+            {/* pestañas de modo */}
+            <div style={{ display: 'flex', gap: 2, padding: 2, borderRadius: SN.radius.full, background: t.surface3, flexShrink: 0 }}>
+              {([['chat', 'Chat'], ['tts', 'Leer']] as [Mode, string][]).map(([m, label]) => (
+                <button key={m} onClick={() => switchMode(m)}
+                  style={{ border: 'none', borderRadius: SN.radius.full, padding: '4px 10px', fontSize: 11.5, fontWeight: 700, fontFamily: SN.font.body, cursor: 'pointer', background: mode === m ? t.bg : 'transparent', color: mode === m ? t.activeText : t.textMuted, boxShadow: mode === m ? SN.shadow.sm : 'none' }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <button onClick={onClose} title="Cerrar" style={{ ...iconBtn, flexShrink: 0 }}><IcX s={16} /></button>
           </div>
-          {/* pestañas de modo */}
-          <div style={{ display: 'flex', gap: 2, padding: 2, borderRadius: SN.radius.full, background: t.surface3, flexShrink: 0 }}>
-            {([['chat', 'Chat'], ['tts', 'Leer']] as [Mode, string][]).map(([m, label]) => (
-              <button key={m} onClick={() => switchMode(m)}
-                style={{ border: 'none', borderRadius: SN.radius.full, padding: '4px 10px', fontSize: 11.5, fontWeight: 700, fontFamily: SN.font.body, cursor: 'pointer', background: mode === m ? t.bg : 'transparent', color: mode === m ? t.activeText : t.textMuted, boxShadow: mode === m ? SN.shadow.sm : 'none' }}>
-                {label}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <select value={voice} onChange={(e) => { setVoice(e.target.value); localStorage.setItem(VOICE_KEY, e.target.value); }}
+              title="Voz (Kokoro)"
+              style={{ flex: 1, minWidth: 0, maxWidth: phone ? 'none' : 190, height: 30, padding: '0 6px', border: `1px solid ${t.border}`, borderRadius: SN.radius.base, background: t.bg, color: t.textSecondary, fontFamily: SN.font.body, fontSize: 11.5, outline: 'none' }}>
+              {voices.length === 0 && <option value={voice}>{voice}</option>}
+              {voices.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+            </select>
+            {!phone && <span style={{ flex: 1 }} />}
+            {mode === 'chat' && (
+              <button onClick={toggleSpeak} title={autoSpeak ? 'Leer respuestas: activado' : 'Leer respuestas: apagado'}
+                style={{ ...iconBtn, flexShrink: 0, color: autoSpeak ? t.activeText : t.textMuted, background: autoSpeak ? t.activeBg : 'transparent' }}>
+                {autoSpeak ? <IcVolume s={16} /> : <IcVolumeX s={16} />}
               </button>
-            ))}
+            )}
+            <button onClick={() => { setMessages([]); sessionStorage.removeItem(STORE_KEY); }} title="Borrar conversación" style={{ ...iconBtn, flexShrink: 0 }}><IcTrash s={15} /></button>
           </div>
-          <select value={voice} onChange={(e) => { setVoice(e.target.value); localStorage.setItem(VOICE_KEY, e.target.value); }}
-            title="Voz (Kokoro)"
-            style={{ maxWidth: 110, height: 30, padding: '0 6px', border: `1px solid ${t.border}`, borderRadius: SN.radius.base, background: t.surface1, color: t.textSecondary, fontFamily: SN.font.body, fontSize: 11.5, outline: 'none' }}>
-            {voices.length === 0 && <option value={voice}>{voice}</option>}
-            {voices.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
-          </select>
-          {mode === 'chat' && (
-            <button onClick={toggleSpeak} title={autoSpeak ? 'Leer respuestas: activado' : 'Leer respuestas: apagado'}
-              style={{ ...iconBtn, color: autoSpeak ? t.activeText : t.textMuted, background: autoSpeak ? t.activeBg : 'transparent' }}>
-              {autoSpeak ? <IcVolume s={16} /> : <IcVolumeX s={16} />}
-            </button>
-          )}
-          <button onClick={() => { setMessages([]); sessionStorage.removeItem(STORE_KEY); }} title="Borrar conversación" style={iconBtn}><IcTrash s={15} /></button>
-          <button onClick={onClose} title="Cerrar" style={iconBtn}><IcX s={16} /></button>
         </div>
 
         {/* mensajes */}
