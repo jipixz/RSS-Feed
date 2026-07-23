@@ -1,8 +1,9 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { spawn, spawnSync } from 'child_process';
+import { randomUUID } from 'crypto';
 import { existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
-import { writeFile } from 'fs/promises';
+import { readFile, writeFile } from 'fs/promises';
 import { basename, dirname, join, resolve } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { SanitizerService } from '../content/sanitizer.service';
@@ -224,10 +225,19 @@ export class TtsService {
     return 'mp3';
   }
 
-  /** TTS al vuelo (minichat): sintetiza con Kokoro y devuelve el mp3 sin cachear. */
-  async say(text: string, voiceRaw?: string): Promise<Buffer> {
-    const voice = this.resolveVoice('kokoro', voiceRaw);
-    // timeout corto: son textos breves; si Kokoro está frío, la 1ª tarda unos s más
-    return this.kokoroSynth(text, voice, 90_000);
+  /** TTS al vuelo (minichat): sintetiza y devuelve el audio sin cachear. */
+  async say(text: string, voiceRaw?: string, engine: TtsEngine = 'kokoro'): Promise<{ audio: Buffer; format: 'mp3' | 'wav' }> {
+    const voice = this.resolveVoice(engine, voiceRaw);
+    if (engine === 'kokoro') {
+      // timeout corto: son textos breves; si Kokoro está frío, la 1ª tarda unos s más
+      return { audio: await this.kokoroSynth(text, voice, 90_000), format: 'mp3' };
+    }
+    // piper: genera a archivo temporal, se lee y se borra
+    const tmpId = `say-${randomUUID()}`;
+    const format = await this.generatePiper(tmpId, voice, text);
+    const path = this.filePath(tmpId, 'piper', voice, format);
+    const audio = await readFile(path);
+    unlinkSync(path);
+    return { audio, format };
   }
 }

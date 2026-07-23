@@ -21,6 +21,10 @@ class SayDto {
   @IsOptional()
   @Matches(/^[a-zA-Z0-9._-]+$/)
   voice?: string;
+
+  @IsOptional()
+  @IsIn(['piper', 'kokoro'])
+  engine?: TtsEngine;
 }
 
 @Controller('tts')
@@ -33,12 +37,12 @@ export class TtsController {
     return this.tts.voices();
   }
 
-  /** TTS al vuelo para el minichat (Kokoro, sin caché). Va ANTES de :id. */
+  /** TTS al vuelo para el minichat (sin caché). Va ANTES de :id. */
   @Post('say')
   async say(@Body() body: SayDto, @Res() res: Response) {
     try {
-      const audio = await this.tts.say(body.text, body.voice);
-      res.setHeader('content-type', 'audio/mpeg');
+      const { audio, format } = await this.tts.say(body.text, body.voice, body.engine ?? 'kokoro');
+      res.setHeader('content-type', format === 'mp3' ? 'audio/mpeg' : 'audio/wav');
       res.setHeader('cache-control', 'no-store');
       res.send(audio);
     } catch (err) {

@@ -196,12 +196,12 @@ export const api = {
   aiChat(messages: ChatTurn[]): Promise<{ reply: string }> {
     return request('/api/ai/chat', { method: 'POST', body: JSON.stringify({ messages }) });
   },
-  /** TTS al vuelo con Kokoro; devuelve el mp3 como Blob (sin caché en server). */
-  async ttsSay(text: string, voice?: string): Promise<Blob> {
+  /** TTS al vuelo; devuelve el audio como Blob (sin caché en server). */
+  async ttsSay(text: string, voice?: string, engine: TtsEngine = 'kokoro'): Promise<Blob> {
     const res = await fetch('/api/tts/say', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ text, ...(voice ? { voice } : {}) }),
+      body: JSON.stringify({ text, engine, ...(voice ? { voice } : {}) }),
     });
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as { message?: string } | null;

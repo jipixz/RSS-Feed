@@ -1,16 +1,22 @@
 import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { SN, Theme } from './tokens';
-import { ChatTurn, VoiceOption, api } from './api';
+import { ChatTurn, TtsEngine, VoiceOption, api } from './api';
 import { IcSend, IcSpark, IcTrash, IcVolume, IcVolumeX, IcX } from './icons';
 
 const STORE_KEY = 'senal.chat'; // sessionStorage: la charla sobrevive al cerrar el panel, no la app
 const SPEAK_KEY = 'senal.chatSpeak';
 const MODE_KEY = 'senal.chatMode';
-// voz propia del chat (no la del audiolibro): aquí se habla español
+// voz propia del chat (no la del audiolibro): aquí se habla español.
+// Se guarda como "motor:voz" — kokoro (PC, calidad) o piper (Pi, p. ej. es_MX).
 const VOICE_KEY = 'senal.chatVoice';
-const DEFAULT_VOICE = 'ef_dora';
+const DEFAULT_VOICE = 'kokoro:ef_dora';
 
 type Mode = 'chat' | 'tts';
+
+const parseVoice = (v: string): { engine: TtsEngine; id: string } => {
+  const [engine, id] = v.includes(':') ? v.split(':', 2) : ['kokoro', v];
+  return { engine: engine === 'piper' ? 'piper' : 'kokoro', id };
+};
 
 const load = (): ChatTurn[] => {
   try {
@@ -33,8 +39,11 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
   const [error, setError] = useState<string | null>(null);
   const [mode, setMode] = useState<Mode>(() => (localStorage.getItem(MODE_KEY) === 'tts' ? 'tts' : 'chat'));
   const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem(SPEAK_KEY) === '1');
-  const [voices, setVoices] = useState<VoiceOption[]>([]);
-  const [voice, setVoice] = useState(() => localStorage.getItem(VOICE_KEY) ?? DEFAULT_VOICE);
+  const [voices, setVoices] = useState<{ piper: VoiceOption[]; kokoro: VoiceOption[] }>({ piper: [], kokoro: [] });
+  const [voice, setVoice] = useState(() => {
+    const v = localStorage.getItem(VOICE_KEY) ?? DEFAULT_VOICE;
+    return v.includes(':') ? v : `kokoro:${v}`; // migra el formato viejo sin motor
+  });
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
 
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -42,7 +51,7 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    api.ttsVoices().then((v) => setVoices(v.kokoro)).catch(() => undefined);
+    api.ttsVoices().then(setVoices).catch(() => undefined);
     inputRef.current?.focus();
     return () => stopAudio();
   }, []);
@@ -63,7 +72,8 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
     stopAudio();
     setSpeakingIdx(idx);
     try {
-      const blob = await api.ttsSay(text.slice(0, 3000), voice);
+      const { engine, id } = parseVoice(voice);
+      const blob = await api.ttsSay(text.slice(0, 3000), id, engine);
       const audio = new Audio(URL.createObjectURL(blob));
       audioRef.current = audio;
       audio.onended = () => { setSpeakingIdx(null); stopAudio(); };
@@ -148,10 +158,19 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <select value={voice} onChange={(e) => { setVoice(e.target.value); localStorage.setItem(VOICE_KEY, e.target.value); }}
-              title="Voz (Kokoro)"
-              style={{ flex: 1, minWidth: 0, maxWidth: phone ? 'none' : 190, height: 30, padding: '0 6px', border: `1px solid ${t.border}`, borderRadius: SN.radius.base, background: t.bg, color: t.textSecondary, fontFamily: SN.font.body, fontSize: 11.5, outline: 'none' }}>
-              {voices.length === 0 && <option value={voice}>{voice}</option>}
-              {voices.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+              title="Voz"
+              style={{ flex: 1, minWidth: 0, maxWidth: phone ? 'none' : 230, height: 30, padding: '0 6px', border: `1px solid ${t.border}`, borderRadius: SN.radius.base, background: t.bg, color: t.textSecondary, fontFamily: SN.font.body, fontSize: 11.5, outline: 'none' }}>
+              {voices.kokoro.length === 0 && voices.piper.length === 0 && <option value={voice}>{parseVoice(voice).id}</option>}
+              {voices.kokoro.length > 0 && (
+                <optgroup label="Kokoro — PC (calidad)">
+                  {voices.kokoro.map((v) => <option key={v.id} value={`kokoro:${v.id}`}>{v.label}</option>)}
+                </optgroup>
+              )}
+              {voices.piper.length > 0 && (
+                <optgroup label="Piper — Pi (rápido)">
+                  {voices.piper.map((v) => <option key={v.id} value={`piper:${v.id}`}>{v.label}</option>)}
+                </optgroup>
+              )}
             </select>
             {!phone && <span style={{ flex: 1 }} />}
             {mode === 'chat' && (

@@ -45,7 +45,18 @@ def get_pipeline(voice: str):
             # en CPU, usar todos los cores físicos acelera un poco la síntesis
             torch.set_num_threads(max(1, (os.cpu_count() or 2) // 2))
         from kokoro import KPipeline
-        _pipelines[lang] = KPipeline(lang_code=lang, device=DEVICE)
+        p = KPipeline(lang_code=lang, device=DEVICE)
+        if lang == "e":
+            # Kokoro fonetiza 'e' como castellano (con zeta). Cambiamos el G2P a
+            # español latinoamericano (seseo). Ajustable: KOKORO_ES_DIALECT=es / es-419
+            dialect = os.environ.get("KOKORO_ES_DIALECT", "es-419")
+            try:
+                from misaki import espeak as _espeak
+                p.g2p = _espeak.EspeakG2P(language=dialect)
+                print(f"G2P español: {dialect}")
+            except Exception as e:
+                print(f"No se pudo cambiar el dialecto a {dialect}: {e}")
+        _pipelines[lang] = p
     return _pipelines[lang]
 
 
