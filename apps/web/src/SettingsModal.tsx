@@ -39,6 +39,7 @@ export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, 
   const [interests, setInterests] = useState<string[]>([]);
   const [interestInput, setInterestInput] = useState('');
   const [affinity, setAffinity] = useState<Record<string, FeedAffinity>>({});
+  const [apiVersion, setApiVersion] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, 
     api.feedAffinities()
       .then((list) => setAffinity(Object.fromEntries(list.map((a) => [a.feedId, a]))))
       .catch(() => undefined);
+    api.health().then((h) => setApiVersion(h.version)).catch(() => setApiVersion('?'));
   }, []);
 
   const note = (msg: string | null, err = false) => {
@@ -283,6 +285,11 @@ export function SettingsModal({ t, phone, folders, feeds, gestures, onGestures, 
               </div>
             );
           })}
+
+          {/* Versión desplegada (web = build embebido, API = commit del server) */}
+          <div style={{ marginTop: 18, paddingTop: 12, borderTop: `1px solid ${t.borderSubtle}`, fontFamily: SN.font.mono, fontSize: 11, color: t.textMuted, textAlign: 'center' }}>
+            Señal · web {__BUILD__} · api {apiVersion ?? '…'}
+          </div>
         </div>
       </div>
     </div>

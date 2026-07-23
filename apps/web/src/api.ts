@@ -188,6 +188,9 @@ export const api = {
   translate(text: string): Promise<{ translation: string }> {
     return request('/api/ai/translate', { method: 'POST', body: JSON.stringify({ text }) });
   },
+  health(): Promise<{ status: 'ok'; version: string }> {
+    return request('/api/health');
+  },
   ttsVoices(): Promise<{ piper: VoiceOption[]; kokoro: VoiceOption[] }> {
     return request('/api/tts/voices');
   },
