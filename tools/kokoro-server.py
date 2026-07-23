@@ -27,19 +27,26 @@ DEFAULT_VOICE = "af_heart"  # inglés; ver https://huggingface.co/hexgrad/Kokoro
 DEVICE = os.environ.get("KOKORO_DEVICE") or None
 
 app = Flask(__name__)
-_pipeline = None  # carga perezosa: el modelo se carga en la primera petición
+_pipelines = {}  # un pipeline por idioma, carga perezosa en la primera petición
 
 
-def get_pipeline():
-    global _pipeline
-    if _pipeline is None:
+def lang_for(voice: str) -> str:
+    """El prefijo de la voz dicta el idioma del G2P: ef_dora → 'e' (español).
+    a=inglés US, b=inglés UK, e=español, f=francés, i=italiano, p=portugués."""
+    prefix = voice[:1]
+    return prefix if prefix in "abefhijpz" else "a"
+
+
+def get_pipeline(voice: str):
+    lang = lang_for(voice)
+    if lang not in _pipelines:
         import torch
         if DEVICE != "cuda":
             # en CPU, usar todos los cores físicos acelera un poco la síntesis
             torch.set_num_threads(max(1, (os.cpu_count() or 2) // 2))
         from kokoro import KPipeline
-        _pipeline = KPipeline(lang_code="a", device=DEVICE)  # 'a' = inglés americano
-    return _pipeline
+        _pipelines[lang] = KPipeline(lang_code=lang, device=DEVICE)
+    return _pipelines[lang]
 
 
 @app.get("/health")
@@ -57,7 +64,10 @@ def speech():
         return jsonify({"error": "input vacío"}), 400
 
     # Kokoro trocea el texto internamente; concatenamos los segmentos
-    pipeline = get_pipeline()
+    try:
+        pipeline = get_pipeline(voice)
+    except Exception as e:  # p. ej. falta espeak-ng para idiomas no-ingleses
+        return jsonify({"error": f"no se pudo crear el pipeline para '{voice}': {e}"}), 500
     chunks = [audio for _, _, audio in pipeline(text, voice=voice)]
     if not chunks:
         return jsonify({"error": "no se generó audio"}), 500

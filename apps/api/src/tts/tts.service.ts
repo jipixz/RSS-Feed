@@ -27,7 +27,11 @@ const KOKORO_TIMEOUT_MS = 600_000;
 const VOICE_ID_RE = /^[a-zA-Z0-9._-]+$/; // evita path traversal
 
 // Voces de Kokoro (https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md)
+// El prefijo dicta el idioma (ef/em = español) — el server elige el G2P por él.
 const KOKORO_VOICES: VoiceOption[] = [
+  { id: 'ef_dora', label: 'Dora (mujer, español) ★' },
+  { id: 'em_alex', label: 'Alex (hombre, español)' },
+  { id: 'em_santa', label: 'Santa (hombre, español)' },
   { id: 'af_heart', label: 'Heart (mujer US) ★' },
   { id: 'af_bella', label: 'Bella (mujer US)' },
   { id: 'af_nicole', label: 'Nicole (mujer US, suave)' },

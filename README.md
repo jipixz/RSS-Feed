@@ -139,6 +139,10 @@ python tools/kokoro-server.py           # escucha en 0.0.0.0:8880
 La primera petición descarga los pesos (~330 MB). Para que arranque con Windows:
 `Win+R → shell:startup` y pega un acceso directo a `tools/kokoro-server.bat`.
 
+El server elige el idioma por el prefijo de la voz: `ef_dora`, `em_alex` y
+`em_santa` hablan **español** (usadas por el minichat); `af_*`/`am_*`/`bf_*`/`bm_*`
+son inglés US/UK (mejores para los artículos).
+
 Con Docker (alternativa): `docker run -d --restart unless-stopped -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest`
 
 En el `.env` de la Pi: `TTS_KOKORO_URL=http://<IP-de-la-PC>:8880`.

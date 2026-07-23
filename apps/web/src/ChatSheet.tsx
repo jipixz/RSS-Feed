@@ -5,7 +5,12 @@ import { IcSend, IcSpark, IcTrash, IcVolume, IcVolumeX, IcX } from './icons';
 
 const STORE_KEY = 'senal.chat'; // sessionStorage: la charla sobrevive al cerrar el panel, no la app
 const SPEAK_KEY = 'senal.chatSpeak';
-const VOICE_KEY = 'senal.ttsVoice.kokoro'; // comparte la voz elegida en el audiolibro
+const MODE_KEY = 'senal.chatMode';
+// voz propia del chat (no la del audiolibro): aquí se habla español
+const VOICE_KEY = 'senal.chatVoice';
+const DEFAULT_VOICE = 'ef_dora';
+
+type Mode = 'chat' | 'tts';
 
 const load = (): ChatTurn[] => {
   try {
@@ -16,17 +21,20 @@ const load = (): ChatTurn[] => {
 };
 
 /**
- * Minichat con el modelo (gemma vía Ollama) + respuestas habladas con Kokoro.
- * Contexto acotado a los últimos 12 turnos — charla esporádica, no sesión larga.
+ * Minichat con dos modos:
+ *  - Chat: conversa con el modelo (gemma vía Ollama), contexto acotado a 12 turnos.
+ *  - Leer: repite literalmente lo que escribas con la voz elegida (TTS puro).
+ * Las voces salen de Kokoro; las ef_/em_ hablan español de verdad.
  */
 export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onClose: () => void }) {
   const [messages, setMessages] = useState<ChatTurn[]>(load);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<Mode>(() => (localStorage.getItem(MODE_KEY) === 'tts' ? 'tts' : 'chat'));
   const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem(SPEAK_KEY) === '1');
   const [voices, setVoices] = useState<VoiceOption[]>([]);
-  const [voice, setVoice] = useState(() => localStorage.getItem(VOICE_KEY) ?? 'af_heart');
+  const [voice, setVoice] = useState(() => localStorage.getItem(VOICE_KEY) ?? DEFAULT_VOICE);
   const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
 
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -73,9 +81,17 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
     setInput('');
     const next = [...messages, { role: 'user' as const, content: text }];
     setMessages(next);
+
+    // modo Leer: no hay modelo — tu texto va directo a Kokoro y se reproduce
+    if (mode === 'tts') {
+      void speak(text, next.length - 1);
+      inputRef.current?.focus();
+      return;
+    }
+
     setBusy(true);
     try {
-      const { reply } = await api.aiChat(next.slice(-12));
+      const { reply } = await api.aiChat(next.filter((m) => m.role === 'user' || m.role === 'assistant').slice(-12));
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
       if (autoSpeak) void speak(reply, next.length);
     } catch (err) {
@@ -84,6 +100,12 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
       setBusy(false);
       inputRef.current?.focus();
     }
+  };
+
+  const switchMode = (m: Mode) => {
+    setMode(m);
+    localStorage.setItem(MODE_KEY, m);
+    inputRef.current?.focus();
   };
 
   const toggleSpeak = () => {
@@ -99,14 +121,25 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 55, background: 'rgba(0,0,0,0.5)', display: 'grid', placeItems: phone ? 'stretch' : 'center', padding: phone ? 0 : 20 }}>
       <div onClick={(e) => e.stopPropagation()}
-        style={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: t.bg, border: phone ? 'none' : `1px solid ${t.border}`, borderRadius: phone ? 0 : SN.radius.xl, boxShadow: SN.shadow.lg, width: phone ? '100%' : 460, height: phone ? '100%' : 'min(640px, 90vh)', overflow: 'hidden' }}>
+        style={{ display: 'flex', flexDirection: 'column', minHeight: 0, background: t.bg, border: phone ? 'none' : `1px solid ${t.border}`, borderRadius: phone ? 0 : SN.radius.xl, boxShadow: SN.shadow.lg, width: phone ? '100%' : 'min(620px, 92vw)', height: phone ? '100%' : 'min(680px, 90vh)', overflow: 'hidden' }}>
 
         {/* header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', borderBottom: `1px solid ${t.border}`, background: t.surface1, flexShrink: 0 }}>
           <span style={{ color: SN.brand.teal, display: 'flex' }}><IcSpark s={17} /></span>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: SN.font.title, fontWeight: 700, fontSize: 15, color: t.textPrimary }}>Minichat</div>
-            <div style={{ fontSize: 11, color: t.textMuted }}>gemma en tu PC · contexto ligero (12 turnos)</div>
+            <div style={{ fontSize: 11, color: t.textMuted }}>
+              {mode === 'chat' ? 'gemma en tu PC · contexto ligero (12 turnos)' : 'lo que escribas se lee en voz alta'}
+            </div>
+          </div>
+          {/* pestañas de modo */}
+          <div style={{ display: 'flex', gap: 2, padding: 2, borderRadius: SN.radius.full, background: t.surface3, flexShrink: 0 }}>
+            {([['chat', 'Chat'], ['tts', 'Leer']] as [Mode, string][]).map(([m, label]) => (
+              <button key={m} onClick={() => switchMode(m)}
+                style={{ border: 'none', borderRadius: SN.radius.full, padding: '4px 10px', fontSize: 11.5, fontWeight: 700, fontFamily: SN.font.body, cursor: 'pointer', background: mode === m ? t.bg : 'transparent', color: mode === m ? t.activeText : t.textMuted, boxShadow: mode === m ? SN.shadow.sm : 'none' }}>
+                {label}
+              </button>
+            ))}
           </div>
           <select value={voice} onChange={(e) => { setVoice(e.target.value); localStorage.setItem(VOICE_KEY, e.target.value); }}
             title="Voz (Kokoro)"
@@ -114,10 +147,12 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
             {voices.length === 0 && <option value={voice}>{voice}</option>}
             {voices.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
           </select>
-          <button onClick={toggleSpeak} title={autoSpeak ? 'Leer respuestas: activado' : 'Leer respuestas: apagado'}
-            style={{ ...iconBtn, color: autoSpeak ? t.activeText : t.textMuted, background: autoSpeak ? t.activeBg : 'transparent' }}>
-            {autoSpeak ? <IcVolume s={16} /> : <IcVolumeX s={16} />}
-          </button>
+          {mode === 'chat' && (
+            <button onClick={toggleSpeak} title={autoSpeak ? 'Leer respuestas: activado' : 'Leer respuestas: apagado'}
+              style={{ ...iconBtn, color: autoSpeak ? t.activeText : t.textMuted, background: autoSpeak ? t.activeBg : 'transparent' }}>
+              {autoSpeak ? <IcVolume s={16} /> : <IcVolumeX s={16} />}
+            </button>
+          )}
           <button onClick={() => { setMessages([]); sessionStorage.removeItem(STORE_KEY); }} title="Borrar conversación" style={iconBtn}><IcTrash s={15} /></button>
           <button onClick={onClose} title="Cerrar" style={iconBtn}><IcX s={16} /></button>
         </div>
@@ -125,9 +160,14 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
         {/* mensajes */}
         <div ref={listRef} className="scroll-y" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {messages.length === 0 && (
-            <div style={{ margin: 'auto', textAlign: 'center', color: t.textMuted, fontSize: 13, lineHeight: 1.6, maxWidth: 280 }}>
-              Pregúntale lo que sea al modelo — dudas de un artículo, código, o pura curiosidad.
-              Activa <IcVolume s={12} /> para que Kokoro lea las respuestas en voz alta.
+            <div style={{ margin: 'auto', textAlign: 'center', color: t.textMuted, fontSize: 13, lineHeight: 1.6, maxWidth: 300 }}>
+              {mode === 'chat' ? (
+                <>Pregúntale lo que sea al modelo — dudas de un artículo, código, o pura curiosidad.
+                Activa <IcVolume s={12} /> para que Kokoro lea las respuestas en voz alta.</>
+              ) : (
+                <>Escribe lo que quieras y lo leo en voz alta con la voz elegida.
+                Las voces <b>Dora, Alex y Santa</b> hablan español de verdad.</>
+              )}
             </div>
           )}
           {messages.map((m, i) => (
@@ -140,8 +180,8 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
                 borderBottomRightRadius: m.role === 'user' ? 4 : 14,
                 borderBottomLeftRadius: m.role === 'user' ? 14 : 4,
               }}>{m.content}</div>
-              {m.role === 'assistant' && (
-                <button onClick={() => void speak(m.content, i)} title={speakingIdx === i ? 'Detener' : 'Escuchar respuesta'}
+              {(m.role === 'assistant' || mode === 'tts') && (
+                <button onClick={() => void speak(m.content, i)} title={speakingIdx === i ? 'Detener' : 'Escuchar'}
                   style={{ ...iconBtn, padding: 4, marginTop: 2, color: speakingIdx === i ? t.activeText : t.textMuted }}>
                   <IcVolume s={13} />{speakingIdx === i && <span style={{ fontSize: 10.5, marginLeft: 3 }}>reproduciendo…</span>}
                 </button>
@@ -162,7 +202,7 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
             ref={inputRef}
             value={input}
             rows={1}
-            placeholder="Escribe un mensaje…"
+            placeholder={mode === 'chat' ? 'Escribe un mensaje…' : 'Escribe y te lo leo en voz alta…'}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void send(); } }}
             style={{ flex: 1, resize: 'none', maxHeight: 110, padding: '9px 12px', border: `1px solid ${t.border}`, borderRadius: SN.radius.lg, background: t.bg, color: t.textPrimary, fontFamily: SN.font.body, fontSize: 14, lineHeight: 1.4, outline: 'none' }}
