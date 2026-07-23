@@ -868,6 +868,7 @@ export default function App() {
     <>
       <style>{`
         @keyframes sn-spin{to{transform:rotate(360deg)}}
+        @keyframes sn-slide{0%{margin-left:-35%}50%{margin-left:100%}100%{margin-left:-35%}}
         .sn-input::placeholder{color:${t.textMuted};opacity:1;font-family:${SN.font.body};font-size:14px;}
         .sn-hover:hover{background:var(--hover)!important;}
         .sn-iconbtn:hover{background:var(--surf3)!important;color:${t.textPrimary}!important;}

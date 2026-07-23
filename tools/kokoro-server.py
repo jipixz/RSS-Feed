@@ -13,6 +13,7 @@ La primera petición descarga los pesos del modelo (~330 MB) de Hugging Face.
 Requiere ffmpeg en el PATH para devolver mp3 (si no, devuelve wav).
 """
 import io
+import os
 import shutil
 import subprocess
 import numpy as np
@@ -21,6 +22,9 @@ from flask import Flask, jsonify, request
 
 PORT = 8880
 DEFAULT_VOICE = "af_heart"  # inglés; ver https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md
+# KOKORO_DEVICE=cuda para usar la GPU (requiere torch con CUDA instalado);
+# sin definir, torch elige solo (CPU si no hay CUDA).
+DEVICE = os.environ.get("KOKORO_DEVICE") or None
 
 app = Flask(__name__)
 _pipeline = None  # carga perezosa: el modelo se carga en la primera petición
@@ -29,8 +33,12 @@ _pipeline = None  # carga perezosa: el modelo se carga en la primera petición
 def get_pipeline():
     global _pipeline
     if _pipeline is None:
+        import torch
+        if DEVICE != "cuda":
+            # en CPU, usar todos los cores físicos acelera un poco la síntesis
+            torch.set_num_threads(max(1, (os.cpu_count() or 2) // 2))
         from kokoro import KPipeline
-        _pipeline = KPipeline(lang_code="a")  # 'a' = inglés americano
+        _pipeline = KPipeline(lang_code="a", device=DEVICE)  # 'a' = inglés americano
     return _pipeline
 
 

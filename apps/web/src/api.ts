@@ -58,6 +58,13 @@ export interface TtsStatus {
   status: 'none' | 'generating' | 'ready' | 'failed';
   error?: string;
   format?: 'mp3' | 'wav';
+  startedAt?: string;
+  tookMs?: number;
+}
+
+export interface VoiceOption {
+  id: string;
+  label: string;
 }
 
 export interface DdgResult {
@@ -181,11 +188,14 @@ export const api = {
   translate(text: string): Promise<{ translation: string }> {
     return request('/api/ai/translate', { method: 'POST', body: JSON.stringify({ text }) });
   },
-  ttsStart(id: string, engine: TtsEngine): Promise<TtsStatus> {
-    return request(`/api/tts/${id}?engine=${engine}`, { method: 'POST' });
+  ttsVoices(): Promise<{ piper: VoiceOption[]; kokoro: VoiceOption[] }> {
+    return request('/api/tts/voices');
   },
-  ttsStatus(id: string, engine: TtsEngine): Promise<TtsStatus> {
-    return request(`/api/tts/${id}/status?engine=${engine}`);
+  ttsStart(id: string, engine: TtsEngine, voice?: string): Promise<TtsStatus> {
+    return request(`/api/tts/${id}?engine=${engine}${voice ? `&voice=${encodeURIComponent(voice)}` : ''}`, { method: 'POST' });
+  },
+  ttsStatus(id: string, engine: TtsEngine, voice?: string): Promise<TtsStatus> {
+    return request(`/api/tts/${id}/status?engine=${engine}${voice ? `&voice=${encodeURIComponent(voice)}` : ''}`);
   },
   searchDdg(q: string): Promise<DdgResult> {
     return request(`/api/search/ddg?q=${encodeURIComponent(q)}`);

@@ -112,11 +112,16 @@ Dos motores intercambiables desde la app (🎧 en el artículo):
 pip install piper-tts
 sudo apt install -y ffmpeg          # comprime el audio a mp3
 mkdir -p ~/RSS/senal/data/tts-voices && cd ~/RSS/senal/data/tts-voices
-wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx
-wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+# voces recomendadas (puedes bajar varias; todas aparecen en el selector de la app)
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx.json
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/hfc_female/medium/en_US-hfc_female-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/hfc_female/medium/en_US-hfc_female-medium.onnx.json
 ```
 En el `.env` de la Pi: `TTS_PIPER_BIN=piper` (o la ruta completa si pip lo dejó
-fuera del PATH: `~/.local/bin/piper`) y `TTS_PIPER_VOICE=<ruta al .onnx>`.
+fuera del PATH: `~/.local/bin/piper`) y `TTS_PIPER_VOICE=<ruta al .onnx>` (voz
+por default). Todas las `.onnx` de esa carpeta salen en el selector de voz de la
+app; si las guardas en otro lado, apunta `TTS_PIPER_VOICES_DIR` a esa carpeta.
 
 **Kokoro (calidad — corre en la PC):**
 
@@ -133,7 +138,14 @@ Con Docker (alternativa): `docker run -d --restart unless-stopped -p 8880:8880 g
 
 En el `.env` de la Pi: `TTS_KOKORO_URL=http://<IP-de-la-PC>:8880`.
 
-El audio se genera una vez por artículo y queda cacheado en `data/audio/`.
+**Acelerar Kokoro con GPU (NVIDIA):** el cuello de botella es cómputo, no RAM.
+Con una GPU la síntesis baja de ~100 s a ~10-20 s por artículo:
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cu121   # ~2.5 GB
+set KOKORO_DEVICE=cuda   # antes de arrancar tools/kokoro-server.py
+```
+
+El audio se genera una vez por artículo+motor+voz y queda cacheado en `data/audio/`.
 
 ### Cambiar a Claude (opcional)
 
