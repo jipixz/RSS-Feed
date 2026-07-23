@@ -10,6 +10,7 @@ import { SettingsModal } from './SettingsModal';
 import { DiscoverModal } from './DiscoverModal';
 import { LiveConsole } from './LiveConsole';
 import { SelectionTranslator } from './SelectionTranslator';
+import { AudioPlayer } from './AudioPlayer';
 import {
   GesturePrefs, READING_SIZES, ReadingPrefs, loadGestures, loadReading, saveGestures, saveReading,
 } from './local-prefs';
@@ -736,6 +737,7 @@ export default function App() {
             {selected.readingMinutes && <span style={{ fontSize: 13, color: t.textMuted }}>· {selected.readingMinutes} min</span>}
           </div>
           <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+            <AudioPlayer t={t} article={selected} phone={phone} />
             <button className="sn-iconbtn" style={iconBtn} onClick={() => { setReadMenuOpen((v) => !v); setThemeMenuOpen(false); }} title="Lectura"><IcType s={16} /></button>
             <button className="sn-iconbtn" style={{ ...iconBtn, color: selected.isStarred ? SN.brand.coral : t.textSecondary }} onClick={() => void toggleStar(selected.id, !selected.isStarred)} title="Guardar">
               {selected.isStarred ? <IcStarF s={17} /> : <IcStar s={17} />}
@@ -805,6 +807,7 @@ export default function App() {
         <span style={{ flex: 1 }} />
         {selected && (
           <>
+            <AudioPlayer t={t} article={selected} phone={phone} />
             <button className="sn-iconbtn" style={iconBtn} onClick={() => { setReadMenuOpen((v) => !v); }} title="Lectura"><IcType s={16} /></button>
             <button className="sn-iconbtn" style={{ ...iconBtn, color: selected.isStarred ? SN.brand.coral : t.textSecondary }} onClick={() => void toggleStar(selected.id, !selected.isStarred)} title="Guardar">
               {selected.isStarred ? <IcStarF s={17} /> : <IcStar s={17} />}

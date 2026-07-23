@@ -46,6 +46,7 @@ export const LogoMark = ({ s = 26 }: IconProps) => (
 );
 export const IcType = (p: IconProps) => (<svg {...I(p)}><path d="M4 7V5h16v2M9 20h6M12 5v15"/></svg>);
 export const IcActivity = (p: IconProps) => (<svg {...I(p)}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>);
+export const IcHeadphones = (p: IconProps) => (<svg {...I(p)}><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>);
 // G de Google monocromática — toma el color del tema (como el logo al prender un Pixel)
 export const IcGoogle = (p: IconProps) => (
   <svg width={p.s || 18} height={p.s || 18} viewBox="0 0 24 24" fill="currentColor">

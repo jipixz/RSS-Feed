@@ -15,6 +15,7 @@ import { PrefsModule } from './prefs/prefs.module';
 import { DigestModule } from './digest/digest.module';
 import { DiscoverModule } from './discover/discover.module';
 import { SearchModule } from './search/search.module';
+import { TtsModule } from './tts/tts.module';
 import { HealthModule } from './health/health.module';
 import { RetentionModule } from './retention/retention.module';
 import { ApiKeyGuard } from './common/api-key.guard';
@@ -47,6 +48,7 @@ const webDist = join(__dirname, '..', '..', 'web', 'dist');
     DigestModule,
     DiscoverModule,
     SearchModule,
+    TtsModule,
     HealthModule,
     RetentionModule,
   ],

@@ -52,6 +52,14 @@ export interface FeedAffinity {
   recentPerWeek: number;
 }
 
+export type TtsEngine = 'piper' | 'kokoro';
+
+export interface TtsStatus {
+  status: 'none' | 'generating' | 'ready' | 'failed';
+  error?: string;
+  format?: 'mp3' | 'wav';
+}
+
 export interface DdgResult {
   heading: string | null;
   abstract: string | null;
@@ -172,6 +180,12 @@ export const api = {
   },
   translate(text: string): Promise<{ translation: string }> {
     return request('/api/ai/translate', { method: 'POST', body: JSON.stringify({ text }) });
+  },
+  ttsStart(id: string, engine: TtsEngine): Promise<TtsStatus> {
+    return request(`/api/tts/${id}?engine=${engine}`, { method: 'POST' });
+  },
+  ttsStatus(id: string, engine: TtsEngine): Promise<TtsStatus> {
+    return request(`/api/tts/${id}/status?engine=${engine}`);
   },
   searchDdg(q: string): Promise<DdgResult> {
     return request(`/api/search/ddg?q=${encodeURIComponent(q)}`);

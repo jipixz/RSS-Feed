@@ -102,6 +102,31 @@ LAN de la PC con Ollama, p. ej. `http://192.168.1.50:11434`.
 
 Si la PC con Ollama está apagada, **la app funciona igual**: los artículos se leen sin TL;DR y los resúmenes pendientes se generan cuando vuelva a estar disponible (FE-03).
 
+### Audiolibro (TTS) — opcional
+
+Dos motores intercambiables desde la app (🎧 en el artículo):
+
+**Piper (rápido — corre en la Pi, funciona sin la PC):**
+```bash
+# en la Pi
+pip install piper-tts
+sudo apt install -y ffmpeg          # comprime el audio a mp3
+mkdir -p ~/RSS/senal/data/tts-voices && cd ~/RSS/senal/data/tts-voices
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json
+```
+En el `.env` de la Pi: `TTS_PIPER_BIN=piper` (o la ruta completa si pip lo dejó
+fuera del PATH: `~/.local/bin/piper`) y `TTS_PIPER_VOICE=<ruta al .onnx>`.
+
+**Kokoro (calidad — corre en la PC):**
+```bash
+# en la PC (Docker)
+docker run -d --restart unless-stopped -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
+```
+En el `.env` de la Pi: `TTS_KOKORO_URL=http://<IP-de-la-PC>:8880`.
+
+El audio se genera una vez por artículo y queda cacheado en `data/audio/`.
+
 ### Cambiar a Claude (opcional)
 
 En `.env`: `AI_PROVIDER=anthropic` + `ANTHROPIC_API_KEY=sk-ant-...` y reinicia. Usa `claude-haiku-4-5` con presupuesto de `AI_DAILY_BUDGET` resúmenes/día (~$1–3 USD/mes con 60/día).
