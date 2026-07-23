@@ -23,6 +23,7 @@ NestJS, patrones de diseño, arquitectura, seguridad y preguntas de entrevista.
 12. [Frontend: cómo se sirve, PWA, barra de progreso, gestos](#12-frontend)
 13. [Seguridad: secretos, defense in depth, Cloudflare Access](#13-seguridad)
 14. [Arquitectura general](#14-arquitectura-general)
+15. [La capa de IA completa: infraestructura, Strategy y TTS](#15-la-capa-de-ia)
 
 ---
 
@@ -489,3 +490,136 @@ Pixel (PWA) ──HTTPS──► Cloudflare Tunnel + Zero Trust ──► [Pi] n
 - La IA es asesora, no portera (afinidad + veredictos informan; tú decides).
 - Capas con contratos (interfaz `AiProvider`, DTOs validados, Prisma como única capa de datos).
 - Degradación elegante (si un feed cae, si Ollama está apagado → el sistema sigue).
+
+---
+
+## 15. La capa de IA
+
+### 15.1 El mapa físico (infraestructura)
+
+Tres máquinas, cada una haciendo lo que mejor puede:
+
+```
+   TELÉFONO (PWA)
+        │ https
+        ▼
+  Cloudflare Tunnel + Zero Trust (auth)
+        │
+        ▼
+┌─ RASPBERRY PI 4B ──────────────────┐      ┌─ PC (RTX 4060) ────────────────┐
+│  NestJS API (:3001) + SPA estática │ LAN  │  Ollama (:11434) → gemma 4B    │
+│  SQLite (data/senal.db)            │─────▶│  Kokoro Flask (:8880) → GPU    │
+│  Piper (subproceso, TTS ligero)    │      │  (ambos arrancan con Windows)  │
+└────────────────────────────────────┘      └────────────────────────────────┘
+```
+
+Principio rector: **la Pi es el cerebro de coordinación, la PC es el músculo.**
+La Pi (4 GB RAM, ARM) no puede correr un LLM ni un TTS neuronal decente, pero sí
+puede orquestar: recibe el request, decide a quién llamarle, cachea resultados y
+degrada con gracia si la PC está apagada (los artículos se leen sin TL;DR, el
+audiolibro cae a Piper local, el chat da un error claro).
+
+Todo lo de IA viaja **por HTTP dentro de la LAN** — la PC nunca se expone a
+internet. El teléfono jamás habla con Ollama/Kokoro directo: siempre pasa por la
+API de la Pi (patrón *proxy/facade*), que es la única autenticada por Cloudflare.
+
+### 15.2 Una interfaz, tres proveedores (Strategy + Factory + DI)
+
+Todo consumo de LLM pasa por UNA interfaz:
+
+```ts
+export const AI_PROVIDER = Symbol('AI_PROVIDER');
+
+export interface AiProvider {
+  summarize(title, text): Promise<SummaryResult>;   // TL;DR de artículos
+  chat(system, user, opts?): Promise<ChatResult>;   // genérico: traducir, chat, verdicts
+  isEnabled(): boolean;
+}
+```
+
+- **Strategy**: hay 3 implementaciones (`ollama`, `anthropic`, `none`) y la env
+  `AI_PROVIDER` elige cuál. Cambiar de gemma local a Claude API = editar el .env.
+- **Factory provider**: en `ai.module.ts` un `useFactory` lee la config y devuelve
+  la instancia correcta. El resto de la app no sabe cuál le tocó.
+- **Symbol token**: la interfaz TypeScript no existe en runtime (se borra al
+  compilar), así que el contenedor DI no puede usarla como llave. El `Symbol`
+  es la llave runtime: `@Inject(AI_PROVIDER) private provider: AiProvider`.
+
+Con eso, cada feature de IA es solo una forma distinta de llamar `provider.chat()`:
+
+| Feature | system prompt | user prompt | dónde |
+|---|---|---|---|
+| TL;DR | "resume en español 1-2 frases" | título + texto del artículo | cron de ingesta |
+| Traducción | "traductor técnico en→es" | texto seleccionado | `POST /api/ai/translate` |
+| Minichat | "asistente de Señal, breve" | historial serializado (≤12 turnos) | `POST /api/ai/chat` |
+| Veredicto Discover | "opina si este feed le sirve" | títulos de muestra + intereses | `POST /api/discover/analyze` |
+
+**Convención NestJS clave: controllers flacos.** El controller solo valida el DTO
+(class-validator), llama al service/provider y traduce errores a HTTP
+(`ServiceUnavailableException` con mensajes útiles: "¿la PC del modelo está
+encendida?"). La lógica vive en services.
+
+### 15.3 Particularidades de hablar con un LLM chico
+
+- `think: false` — gemma es un modelo con razonamiento híbrido; si "piensa",
+  quema el presupuesto de tokens en el pensamiento y devuelve respuesta vacía.
+- `keep_alive: '30m'` — mantiene el modelo en VRAM entre llamadas (la carga en
+  frío cuesta ~20 s).
+- `AbortSignal.timeout(120_000)` — timeout amplio porque una cola de resúmenes
+  puede tener ocupado a Ollama.
+- Presupuesto diario (`AI_DAILY_BUDGET`) — un contador en BD evita que un
+  backlog de 500 artículos fría la PC toda la noche.
+- La IA **nunca bloquea**: si falla, el artículo queda `tldrStatus='pending'` y
+  se reintenta al siguiente ciclo. Regla de oro: la app funciona igual sin IA.
+
+### 15.4 El minichat: la "memoria" de un LLM es mentira
+
+Los LLM no recuerdan nada entre llamadas. El "chat" es teatro: el front manda
+los últimos 12 mensajes completos en cada request, el backend los serializa
+("Usuario: ...\nAsistente: ...") en un solo prompt y gemma "continúa" la
+conversación. Doble límite: `slice(-12)` en el front y `@ArrayMaxSize(12)` en el
+DTO (nunca confíes solo en el cliente). ChatGPT/Claude hacen exactamente esto
+pero con contextos de 200K tokens y caché de prompts.
+
+### 15.5 TTS: el mismo patrón Strategy, otra vez
+
+Dos motores intercambiables detrás de `TtsService`:
+
+- **Piper** (en la Pi): `spawn()` del binario con el texto por stdin → WAV →
+  ffmpeg → mp3. Sin red, sin GPU: funciona aunque la PC esté apagada.
+- **Kokoro** (en la PC): un mini-servidor Flask propio (`tools/kokoro-server.py`)
+  que expone la API OpenAI-compatible `/v1/audio/speech`. El backend le hace un
+  fetch y guarda el mp3.
+
+Detalles con chicha:
+
+- **Caché por `artículo+motor+voz`** en `data/audio/` — generar cuesta, servir no.
+- **Idioma por prefijo de voz**: `ef_dora` → pipeline español, `af_heart` →
+  inglés. El server crea un `KPipeline` por idioma (lazy) y los reutiliza.
+- **GPU**: el cuello de botella del TTS neuronal es cómputo, no RAM. En CPU ~2×
+  tiempo real; con CUDA en la RTX 4060, ~40× (8 min de audio en 12 s).
+- **`Range` requests**: el endpoint de audio soporta 206 Partial Content para
+  que el player pueda hacer seek sin descargar todo.
+- **`/api/tts/say`**: TTS al vuelo sin caché (para el chat) — el mp3 viaja como
+  Blob y el front lo reproduce con `URL.createObjectURL`.
+
+### 15.6 La consola en vivo: bus de eventos + SSE
+
+`AiEventsService` es un Subject de RxJS con buffer (patrón *observer*): el
+summarizer, el traductor y el chat emiten `start/done/error`, y el endpoint
+`@Sse('stream')` los empuja al navegador. Con heartbeat cada 25 s para que
+Cloudflare no mate la conexión idle, y dedupe en el cliente porque una
+reconexión re-emite el buffer. Resultado: ves el prompt exacto y la respuesta
+de cada llamada al modelo, en tiempo real, desde el teléfono.
+
+### 15.7 Resumen para entrevista
+
+> "Monté una capa de IA local-first: un LLM (gemma vía Ollama) y un TTS neuronal
+> (Kokoro) corren en mi PC con GPU, expuestos solo en LAN; una Raspberry Pi
+> orquesta todo con NestJS usando el patrón Strategy — una interfaz `AiProvider`
+> detrás de un token DI con tres implementaciones intercambiables por variable
+> de entorno. Los controllers son flacos (DTO → service → excepción HTTP), la IA
+> degrada con gracia (nunca bloquea la funcionalidad core), hay presupuesto
+> diario, caché de resultados costosos (TL;DR en BD, audio en disco) y
+> observabilidad por SSE. Cambiar de modelo local a Claude API es editar una
+> línea del .env."
