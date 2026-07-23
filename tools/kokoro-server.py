@@ -1,0 +1,76 @@
+"""
+Mini-servidor TTS OpenAI-compatible para Kokoro (sin Docker).
+
+Expone POST /v1/audio/speech  { input, voice, response_format }
+igual que kokoro-fastapi, para que el backend de Señal (TTS_KOKORO_URL)
+le pegue sin cambios.
+
+Uso (en la PC, donde vive el modelo):
+    pip install kokoro soundfile flask
+    python tools/kokoro-server.py          # escucha en 0.0.0.0:8880
+
+La primera petición descarga los pesos del modelo (~330 MB) de Hugging Face.
+Requiere ffmpeg en el PATH para devolver mp3 (si no, devuelve wav).
+"""
+import io
+import shutil
+import subprocess
+import numpy as np
+import soundfile as sf
+from flask import Flask, jsonify, request
+
+PORT = 8880
+DEFAULT_VOICE = "af_heart"  # inglés; ver https://huggingface.co/hexgrad/Kokoro-82M/blob/main/VOICES.md
+
+app = Flask(__name__)
+_pipeline = None  # carga perezosa: el modelo se carga en la primera petición
+
+
+def get_pipeline():
+    global _pipeline
+    if _pipeline is None:
+        from kokoro import KPipeline
+        _pipeline = KPipeline(lang_code="a")  # 'a' = inglés americano
+    return _pipeline
+
+
+@app.get("/health")
+def health():
+    return jsonify({"status": "ok", "model": "kokoro-82M"})
+
+
+@app.post("/v1/audio/speech")
+def speech():
+    body = request.get_json(force=True)
+    text = (body.get("input") or "").strip()
+    voice = body.get("voice") or DEFAULT_VOICE
+    fmt = body.get("response_format") or "mp3"
+    if not text:
+        return jsonify({"error": "input vacío"}), 400
+
+    # Kokoro trocea el texto internamente; concatenamos los segmentos
+    pipeline = get_pipeline()
+    chunks = [audio for _, _, audio in pipeline(text, voice=voice)]
+    if not chunks:
+        return jsonify({"error": "no se generó audio"}), 500
+    audio = np.concatenate(chunks)
+
+    wav = io.BytesIO()
+    sf.write(wav, audio, 24000, format="WAV", subtype="PCM_16")
+    wav_bytes = wav.getvalue()
+
+    if fmt == "mp3" and shutil.which("ffmpeg"):
+        proc = subprocess.run(
+            ["ffmpeg", "-f", "wav", "-i", "pipe:0", "-codec:a", "libmp3lame",
+             "-b:a", "64k", "-ac", "1", "-f", "mp3", "pipe:1"],
+            input=wav_bytes, capture_output=True,
+        )
+        if proc.returncode == 0 and len(proc.stdout) > 1000:
+            return proc.stdout, 200, {"Content-Type": "audio/mpeg"}
+
+    return wav_bytes, 200, {"Content-Type": "audio/wav"}
+
+
+if __name__ == "__main__":
+    print(f"Kokoro TTS server en http://0.0.0.0:{PORT}  (voz default: {DEFAULT_VOICE})")
+    app.run(host="0.0.0.0", port=PORT, threaded=False)

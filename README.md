@@ -119,10 +119,18 @@ En el `.env` de la Pi: `TTS_PIPER_BIN=piper` (o la ruta completa si pip lo dejó
 fuera del PATH: `~/.local/bin/piper`) y `TTS_PIPER_VOICE=<ruta al .onnx>`.
 
 **Kokoro (calidad — corre en la PC):**
+
+Sin Docker (nativo con Python, incluye servidor propio en `tools/`):
 ```bash
-# en la PC (Docker)
-docker run -d --restart unless-stopped -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest
+# en la PC
+pip install kokoro soundfile flask
+python tools/kokoro-server.py           # escucha en 0.0.0.0:8880
 ```
+La primera petición descarga los pesos (~330 MB). Para que arranque con Windows:
+`Win+R → shell:startup` y pega un acceso directo a `tools/kokoro-server.bat`.
+
+Con Docker (alternativa): `docker run -d --restart unless-stopped -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest`
+
 En el `.env` de la Pi: `TTS_KOKORO_URL=http://<IP-de-la-PC>:8880`.
 
 El audio se genera una vez por artículo y queda cacheado en `data/audio/`.
