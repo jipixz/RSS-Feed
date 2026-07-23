@@ -1,6 +1,6 @@
 import { CSSProperties, useEffect, useRef, useState } from 'react';
 import { SN, Theme } from './tokens';
-import { IcSearch, IcSpark, IcX } from './icons';
+import { IcGoogle, IcSearch, IcSpark, IcX } from './icons';
 import { api } from './api';
 import { SearchSheet } from './SearchSheet';
 
@@ -60,6 +60,11 @@ export function SelectionTranslator({ t, phone, containerRef }: {
     setSel(null);
   };
 
+  const googleOpen = () => {
+    if (sel) window.open(`https://www.google.com/search?q=${encodeURIComponent(sel.text)}`, '_blank', 'noopener');
+    setSel(null);
+  };
+
   const close = () => { setResult(null); setSel(null); };
 
   if (!sel && !result && !search) return null;
@@ -69,22 +74,27 @@ export function SelectionTranslator({ t, phone, containerRef }: {
     ? `0 4px 18px rgba(49,173,255,0.16), 0 6px 20px rgba(0,0,0,0.55)`
     : `0 2px 6px rgba(15,27,35,0.10), 0 10px 26px rgba(15,27,35,0.18)`;
 
-  const barBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 5, height: 34, padding: '0 14px', borderRadius: SN.radius.full, border: 'none', background: 'transparent', color: t.textSecondary, fontFamily: SN.font.body, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' };
+  const barBtn: CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 5, height: 36, padding: '0 14px', borderRadius: SN.radius.full, border: 'none', background: 'transparent', color: t.textSecondary, fontFamily: SN.font.body, fontSize: 13.5, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' };
   const pillBtn: CSSProperties = { ...barBtn, color: t.bg };
+  // Botones circulares homologados: tinte azul del tema (como la G del Pixel)
+  const circleBtn: CSSProperties = { width: 36, height: 36, borderRadius: '50%', border: 'none', display: 'grid', placeItems: 'center', background: t.activeBg, color: t.activeText, cursor: 'pointer', flexShrink: 0 };
 
   // ── el disparador (barra abajo en móvil / píldora flotante en escritorio) ──
   const trigger = sel && !result && (
     phone ? (
-      <div data-seltool style={{ position: 'fixed', left: 12, right: 12, bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 70, display: 'flex', alignItems: 'center', gap: 6, background: t.surface3, border: `1.5px solid ${t.activeBar}`, borderRadius: 14, padding: '8px 8px 8px 14px', boxShadow: barShadow }}>
+      <div data-seltool style={{ position: 'fixed', left: 12, right: 12, bottom: 'calc(16px + env(safe-area-inset-bottom))', zIndex: 70, display: 'flex', alignItems: 'center', gap: 8, background: t.surface3, border: `1.5px solid ${t.activeBar}`, borderRadius: 14, padding: '8px 8px 8px 14px', boxShadow: barShadow }}>
         <span style={{ flex: 1, minWidth: 0, color: t.textSecondary, fontSize: 12.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>“{sel.text}”</span>
         <button data-seltool style={{ ...barBtn, background: SN.brand.blue, color: '#fff' }} onClick={translate}><IcSpark s={14} /> Traducir</button>
-        <button data-seltool style={{ ...barBtn, width: 40, padding: 0, justifyContent: 'center' }} onClick={lookup} title="Buscar"><IcSearch s={15} /></button>
+        <button data-seltool style={circleBtn} onClick={lookup} title="Buscar"><IcSearch s={16} /></button>
+        <button data-seltool style={circleBtn} onClick={googleOpen} title="Google — se abre en el navegador"><IcGoogle s={17} /></button>
       </div>
     ) : (
-      <div data-seltool style={{ position: 'fixed', top: sel.y < 96 ? sel.y + 26 : sel.y - 48, left: sel.x, transform: 'translateX(-50%)', zIndex: 70, display: 'flex', gap: 2, background: t.textPrimary, borderRadius: SN.radius.full, padding: 3, boxShadow: SN.shadow.lg }}>
+      <div data-seltool style={{ position: 'fixed', top: sel.y < 96 ? sel.y + 26 : sel.y - 48, left: sel.x, transform: 'translateX(-50%)', zIndex: 70, display: 'flex', alignItems: 'center', gap: 2, background: t.textPrimary, borderRadius: SN.radius.full, padding: 3, boxShadow: SN.shadow.lg }}>
         <button data-seltool style={pillBtn} onClick={translate}><IcSpark s={13} /> Traducir</button>
         <span style={{ width: 1, background: t.textMuted, opacity: 0.4, margin: '5px 0' }} />
         <button data-seltool style={pillBtn} onClick={lookup}><IcSearch s={12} /> Buscar</button>
+        <span style={{ width: 1, background: t.textMuted, opacity: 0.4, margin: '5px 0' }} />
+        <button data-seltool style={{ ...pillBtn, padding: '0 10px' }} onClick={googleOpen} title="Google — se abre en el navegador"><IcGoogle s={15} /></button>
       </div>
     )
   );
