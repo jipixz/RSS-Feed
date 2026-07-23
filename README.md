@@ -44,15 +44,20 @@ pm2 save                   # sobrevive reinicios (con pm2 startup configurado)
 # 5. Listo — http://<IP-de-la-Pi>:3001 (o tu Cloudflare Tunnel apuntando a ese puerto)
 ```
 
-Actualizar a una versión nueva (el script `update` instala deps, aplica
+Actualizar a una versión nueva (el script `actualizar` instala deps, aplica
 migraciones de BD y compila regenerando el cliente Prisma):
 
 ```bash
-git pull && pnpm update && pm2 restart senal
+git pull && pnpm actualizar && pm2 restart senal
 ```
 
-> `pnpm build` ya regenera el cliente Prisma y `pnpm update` aplica las
-> migraciones antes de compilar — así un cambio de esquema nunca rompe el build.
+> Ojo: el script NO puede llamarse `update` porque `pnpm update` es un comando
+> nativo de pnpm (actualiza dependencias) y le gana al script. `pnpm build` ya
+> regenera el cliente Prisma y `pnpm actualizar` aplica las migraciones antes de
+> compilar — así un cambio de esquema nunca rompe el build.
+>
+> Verifica qué versión quedó desplegada en **Ajustes → hasta abajo** (commit de
+> web y api) o con `curl -s localhost:3001/api/health`.
 
 Consumo esperado en la Pi: ~100–150 MB en reposo, picos de 300–450 MB durante la
 ingesta (acotado por `--max-old-space-size=512` en `ecosystem.config.js`).

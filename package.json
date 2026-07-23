@@ -8,7 +8,7 @@
     "dev:api": "pnpm --filter api dev",
     "dev:web": "pnpm --filter web dev",
     "build": "pnpm prisma:generate && pnpm --filter web build && pnpm --filter api build",
-    "update": "pnpm install && pnpm prisma:deploy && pnpm build",
+    "actualizar": "pnpm install && pnpm prisma:deploy && pnpm build",
     "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
     "prisma:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
     "prisma:seed": "tsx prisma/seed.ts",
