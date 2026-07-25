@@ -1,11 +1,22 @@
 # Señal — lector RSS con contenido completo y TL;DR IA
 
-Lector RSS personal (single-user) que **trae el cuerpo completo de los artículos dentro de la app** (no te manda al sitio web), filtra ruido por palabras silenciadas y genera un TL;DR de 1–2 frases en español con IA. Diseñado para correr en una **Raspberry Pi 4B**.
+Lector RSS personal (single-user) que **trae el cuerpo completo de los artículos dentro de la app** (no te manda al sitio web), filtra ruido por palabras silenciadas y genera un TL;DR de 1–2 frases en español con IA. Nació para una **Raspberry Pi 4B**, pero corre en cualquier lado con Node (VPS, mini-PC, Docker, tu escritorio).
 
 - **Backend:** NestJS + Prisma + SQLite (un solo archivo de BD en `data/senal.db`)
-- **Frontend:** React + Vite (SPA estática servida por el mismo NestJS en `:3001`)
-- **IA:** conmutable por env — `ollama` (otra máquina de tu red) · `anthropic` (Claude Haiku) · `none`
+- **Frontend:** React + Vite (SPA estática servida por el mismo NestJS en `:3001`), instalable como PWA
+- **IA:** conmutable por env — `ollama` (local, otra máquina de tu red) · `anthropic` (Claude en la nube) · `none`
+- **Audiolibro:** TTS dual — Piper (local) y Kokoro (calidad, con GPU) — + minichat con el modelo
 - **Spec:** ver `files (1)/SPEC.md` (fuente de verdad del comportamiento)
+
+## Documentación
+
+Este proyecto está pensado para **adaptarse a tu setup** — no estás atado a una Pi,
+a Ollama ni a Cloudflare. Guías:
+
+- **[Proveedores de IA](docs/proveedores-ia.md)** — IA local (Ollama), en la nube (Claude/OpenAI/otros) o sin IA; modos de conexión.
+- **[Hosting](docs/hosting.md)** — dónde montarlo: Pi, VPS/Linux, Docker, Windows/Mac; backups.
+- **[Autenticación](docs/autenticacion.md)** — solo LAN, VPN (Tailscale), Cloudflare Access, o **login local + MFA** con reverse proxy (Caddy/Authelia).
+- **[Personalización](docs/personalizacion.md)** — temas, color de acento, ancho y tamaño de texto, tipografía, feeds, prompts.
 
 ## Desarrollo (Windows/Mac/Linux)
 
