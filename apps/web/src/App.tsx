@@ -1,9 +1,9 @@
 import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DOMPurify from 'dompurify';
-import { SN, THEMES, THEME_LABELS, ThemeKey } from './tokens';
+import { SN, THEMES, THEME_LABELS, ThemeKey, applyAccent } from './tokens';
 import {
   IcActivity, IcBack, IcChat, IcCheck, IcCircle, IcCode, IcCpu, IcDb, IcExt, IcFilter, IcGear, IcInbox,
-  IcPalette, IcRefresh, IcSearch, IcShield, IcSpark, IcStar, IcStarF, IcTag, IcType, IcX, LogoMark,
+  IcPalette, IcPlus, IcRefresh, IcSearch, IcShield, IcSpark, IcStar, IcStarF, IcTag, IcType, IcX, LogoMark,
 } from './icons';
 import { api, ArticleDetail, ArticleListItem, DigestItem, FeedInfo, Folder, timeAgo } from './api';
 import { SettingsModal } from './SettingsModal';
@@ -13,7 +13,9 @@ import { ChatSheet } from './ChatSheet';
 import { SelectionTranslator } from './SelectionTranslator';
 import { AudioPlayer } from './AudioPlayer';
 import {
-  GesturePrefs, READING_SIZES, ReadingPrefs, loadGestures, loadReading, saveGestures, saveReading,
+  ACCENT_PRESETS, GesturePrefs, READING_SIZES, READING_WIDTH_LABELS, READING_WIDTHS, ReadingPrefs,
+  SIDEBAR_MAX, SIDEBAR_MIN, loadAccent, loadGestures, loadReading, loadSidebarWidth,
+  saveAccent, saveGestures, saveReading, saveSidebarWidth,
 } from './local-prefs';
 
 const FOLDER_ICONS: Record<string, (p: { s?: number }) => React.ReactElement> = {
@@ -48,7 +50,8 @@ function Pill({ children, bg, color, mono }: { children: React.ReactNode; bg: st
 
 export default function App() {
   const [theme, setTheme] = useState<ThemeKey>('light');
-  const t = THEMES[theme];
+  const [accent, setAccent] = useState<string | null>(loadAccent);
+  const t = useMemo(() => applyAccent(THEMES[theme], accent), [theme, accent]);
 
   const width = useViewportWidth();
   const compact = width < 1100; // sin sidebar → chips
@@ -92,6 +95,8 @@ export default function App() {
 
   const [reading, setReading] = useState<ReadingPrefs>(loadReading);
   const [gestures, setGestures] = useState<GesturePrefs>(loadGestures);
+  const [sidebarW, setSidebarW] = useState(loadSidebarWidth);
+  const draggingSidebar = useRef(false);
   const [swipe, setSwipe] = useState<{ id: string; dx: number } | null>(null);
   const swipeRef = useRef<{ id: string; x: number; y: number; horizontal: boolean | null } | null>(null);
   const edgeRef = useRef<number | null>(null);
@@ -300,6 +305,34 @@ export default function App() {
     saveGestures(next);
   }, []);
 
+  const updateAccent = useCallback((hex: string | null) => {
+    setAccent(hex);
+    saveAccent(hex);
+  }, []);
+
+  // Drag del borde del sidebar para ensanchar/estrechar (desktop).
+  const startSidebarDrag = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    draggingSidebar.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    const onMove = (ev: PointerEvent) => {
+      if (!draggingSidebar.current) return;
+      const w = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, ev.clientX));
+      setSidebarW(w);
+    };
+    const onUp = () => {
+      draggingSidebar.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      setSidebarW((w) => { saveSidebarWidth(w); return w; });
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, []);
+
   const refresh = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -413,7 +446,7 @@ export default function App() {
   const themeMenu = themeMenuOpen && (
     <>
       <div onClick={() => setThemeMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-      <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 41, background: t.bg, border: `1px solid ${t.border}`, borderRadius: SN.radius.lg, boxShadow: SN.shadow.lg, padding: 6, minWidth: 150 }}>
+      <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 41, background: t.bg, border: `1px solid ${t.border}`, borderRadius: SN.radius.lg, boxShadow: SN.shadow.lg, padding: 6, minWidth: 180 }}>
         {(Object.keys(THEMES) as ThemeKey[]).map((key) => (
           <button key={key} onClick={() => pickTheme(key)} className="sn-hover"
             style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', border: 'none', background: theme === key ? t.activeBg : 'transparent', color: theme === key ? t.activeText : t.textSecondary, borderRadius: SN.radius.base, cursor: 'pointer', fontFamily: SN.font.body, fontSize: 13.5, fontWeight: 600, textAlign: 'left' }}>
@@ -422,6 +455,27 @@ export default function App() {
             {theme === key && <span style={{ marginLeft: 'auto', display: 'flex' }}><IcCheck s={14} /></span>}
           </button>
         ))}
+
+        {/* Color de acento / resaltado */}
+        <div style={{ borderTop: `1px solid ${t.borderSubtle}`, marginTop: 6, paddingTop: 8 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: t.textTertiary, padding: '0 4px 8px' }}>Acento</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 4px' }}>
+            {ACCENT_PRESETS.map((p) => (
+              <button key={p.id} onClick={() => updateAccent(p.color)} title={p.label}
+                style={{ width: 22, height: 22, borderRadius: '50%', background: p.color, cursor: 'pointer', border: accent === p.color ? `2px solid ${t.textPrimary}` : `1px solid ${t.border}`, padding: 0 }} />
+            ))}
+            <label title="Color personalizado"
+              style={{ width: 22, height: 22, borderRadius: '50%', cursor: 'pointer', border: `1px dashed ${t.textMuted}`, display: 'grid', placeItems: 'center', overflow: 'hidden', position: 'relative', background: t.surface2 }}>
+              <IcPlus s={12} />
+              <input type="color" value={accent ?? '#0084ff'} onChange={(e) => updateAccent(e.target.value)}
+                style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+            </label>
+          </div>
+          <button onClick={() => updateAccent(null)}
+            style={{ marginTop: 8, width: '100%', padding: '6px', borderRadius: SN.radius.base, border: `1px solid ${t.border}`, background: accent ? t.bg : t.activeBg, color: accent ? t.textSecondary : t.activeText, cursor: 'pointer', fontFamily: SN.font.body, fontSize: 12, fontWeight: 600 }}>
+            {accent ? 'Usar color del tema' : 'Color del tema ✓'}
+          </button>
+        </div>
       </div>
     </>
   );
@@ -438,9 +492,18 @@ export default function App() {
           <button className="sn-iconbtn" style={{ ...iconBtn, width: 32, height: 32 }} disabled={reading.size === 3}
             onClick={() => updateReading({ ...reading, size: Math.min(3, reading.size + 1) as ReadingPrefs['size'] })}>A+</button>
         </div>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: t.textTertiary, marginBottom: 8 }}>Ancho del texto</div>
+        <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
+          {READING_WIDTH_LABELS.map((label, i) => (
+            <button key={label} onClick={() => updateReading({ ...reading, width: i as ReadingPrefs['width'] })}
+              style={{ flex: 1, padding: '6px 2px', borderRadius: SN.radius.base, border: `1px solid ${reading.width === i ? t.activeBar : t.border}`, background: reading.width === i ? t.activeBg : t.bg, color: reading.width === i ? t.activeText : t.textSecondary, cursor: 'pointer', fontFamily: SN.font.body, fontSize: 11, fontWeight: 600 }}>
+              {label}
+            </button>
+          ))}
+        </div>
         <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}>
           <span style={{ fontSize: 13.5, color: t.textSecondary, fontWeight: 600 }}>Fuente serif</span>
-          <span onClick={() => updateReading({ ...reading, serif: !reading.serif })} style={{ width: 34, height: 20, borderRadius: 999, background: reading.serif ? SN.brand.teal : t.surface3, border: `1px solid ${reading.serif ? SN.brand.teal : t.border}`, position: 'relative', transition: 'all .18s', cursor: 'pointer' }}>
+          <span onClick={() => updateReading({ ...reading, serif: !reading.serif })} style={{ width: 34, height: 20, borderRadius: 999, background: reading.serif ? t.activeBar : t.surface3, border: `1px solid ${reading.serif ? t.activeBar : t.border}`, position: 'relative', transition: 'all .18s', cursor: 'pointer' }}>
             <span style={{ position: 'absolute', top: 1, left: reading.serif ? 15 : 1, width: 16, height: 16, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 2px rgba(0,0,0,.2)', transition: 'left .18s' }} />
           </span>
         </label>
@@ -475,7 +538,7 @@ export default function App() {
   );
 
   const sidebar = !compact && (
-    <nav className="scroll-y" style={{ width: 236, flexShrink: 0, borderRight: `1px solid ${t.border}`, background: t.surface1, padding: '16px 12px', display: 'flex', flexDirection: 'column' }}>
+    <nav className="scroll-y" style={{ width: sidebarW, flexShrink: 0, borderRight: `1px solid ${t.border}`, background: t.surface1, padding: '16px 12px', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <button onClick={() => selectView({ digest: true })} className={digestMode ? '' : 'sn-hover'}
         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '9px 10px', marginBottom: 10, border: `1px solid ${digestMode ? t.activeBar : t.border}`, cursor: 'pointer', borderRadius: SN.radius.lg, textAlign: 'left', background: digestMode ? t.activeBg : t.bg, color: digestMode ? t.activeText : t.textSecondary, fontFamily: SN.font.body, fontWeight: 600, fontSize: 14 }}>
         <span style={{ color: digestMode ? t.activeText : SN.brand.teal, display: 'flex' }}><IcSpark s={17} /></span>
@@ -510,6 +573,10 @@ export default function App() {
           {feeds.length} fuentes{hiddenByMutes > 0 ? ` · ${hiddenByMutes} silenciados` : ''}
         </div>
       </div>
+
+      {/* asa para arrastrar el ancho del sidebar */}
+      <div onPointerDown={startSidebarDrag} title="Arrastra para ajustar el ancho"
+        style={{ position: 'absolute', top: 0, right: -3, width: 7, height: '100%', cursor: 'col-resize', zIndex: 5 }} />
     </nav>
   );
 
@@ -718,6 +785,8 @@ export default function App() {
 
   const contentFont = reading.serif ? SN.font.serif : SN.font.body;
   const contentSize = READING_SIZES[reading.size];
+  const readingW = READING_WIDTHS[reading.width];
+  const columnMax = phone || readingW === Infinity ? '100%' : readingW;
 
   const articleBody = !selectedId ? (
     <div style={{ height: '100%', display: 'grid', placeItems: 'center', padding: 24 }}>
@@ -731,7 +800,7 @@ export default function App() {
       {loadingDetail ? 'Cargando artículo…' : 'No se pudo cargar el artículo.'}
     </div>
   ) : (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: phone ? '20px 18px 80px' : '28px 40px 60px' }}>
+    <div style={{ maxWidth: columnMax, margin: '0 auto', padding: phone ? '20px 18px 80px' : '28px 40px 60px' }}>
       {!phone && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, gap: 8, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
@@ -787,9 +856,9 @@ export default function App() {
     </div>
   );
 
-  // barra fina de progreso de lectura, pegada arriba del contenido del artículo
-  // rosa de marca en todos los temas salvo sepia (ahí el azul contrasta mejor)
-  const progressColor = theme === 'sepia' ? t.activeBar : SN.brand.coral;
+  // barra fina de progreso de lectura, pegada arriba del contenido del artículo.
+  // Si hay acento personalizado, lo usa; si no, rosa de marca (azul en sepia).
+  const progressColor = accent ?? (theme === 'sepia' ? t.activeBar : SN.brand.coral);
   const progressBar = selected ? (
     <div style={{ position: 'sticky', top: 0, left: 0, right: 0, height: 3, background: t.borderSubtle, zIndex: 6 }}>
       <div style={{ height: '100%', width: `${Math.round(readProgress * 100)}%`, background: progressColor, transition: 'width .1s linear' }} />

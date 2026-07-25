@@ -44,6 +44,34 @@ export const THEME_LABELS: Record<ThemeKey, string> = {
   black: 'Negro',
 };
 
+/** "#rrggbb" + alpha 0..1 → "rgba(r,g,b,a)". */
+export function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace('#', '');
+  const n = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const r = parseInt(n.slice(0, 2), 16);
+  const g = parseInt(n.slice(2, 4), 16);
+  const b = parseInt(n.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+/**
+ * Aplica un color de acento personalizado sobre un tema: reescribe los tonos
+ * de "activo" y del TL;DR derivándolos del hex. `null` deja el tema intacto.
+ */
+export function applyAccent(theme: Theme, accent: string | null): Theme {
+  if (!accent) return theme;
+  const dark = theme.isDark;
+  return {
+    ...theme,
+    activeBar: accent,
+    activeText: accent,
+    activeBg: hexToRgba(accent, dark ? 0.16 : 0.12),
+    tldrBg: hexToRgba(accent, dark ? 0.1 : 0.1),
+    tldrBorder: hexToRgba(accent, dark ? 0.32 : 0.3),
+    tldrText: accent,
+  };
+}
+
 export const THEMES: Record<ThemeKey, Theme> = {
   light: {
     appBg: '#EEF1F4', bg: '#FFFFFF', surface1: '#FBFCFD', surface2: '#F6F8FA', surface3: '#EEF1F4',

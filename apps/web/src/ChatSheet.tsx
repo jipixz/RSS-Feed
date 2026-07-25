@@ -160,17 +160,8 @@ export function ChatSheet({ t, phone, onClose }: { t: Theme; phone: boolean; onC
             <select value={voice} onChange={(e) => { setVoice(e.target.value); localStorage.setItem(VOICE_KEY, e.target.value); }}
               title="Voz"
               style={{ flex: 1, minWidth: 0, maxWidth: phone ? 'none' : 230, height: 30, padding: '0 6px', border: `1px solid ${t.border}`, borderRadius: SN.radius.base, background: t.bg, color: t.textSecondary, fontFamily: SN.font.body, fontSize: 11.5, outline: 'none' }}>
-              {voices.kokoro.length === 0 && voices.piper.length === 0 && <option value={voice}>{parseVoice(voice).id}</option>}
-              {voices.kokoro.length > 0 && (
-                <optgroup label="Kokoro — PC (calidad)">
-                  {voices.kokoro.map((v) => <option key={v.id} value={`kokoro:${v.id}`}>{v.label}</option>)}
-                </optgroup>
-              )}
-              {voices.piper.length > 0 && (
-                <optgroup label="Piper — Pi (rápido)">
-                  {voices.piper.map((v) => <option key={v.id} value={`piper:${v.id}`}>{v.label}</option>)}
-                </optgroup>
-              )}
+              {voices.kokoro.length === 0 && <option value={voice}>{parseVoice(voice).id}</option>}
+              {voices.kokoro.map((v) => <option key={v.id} value={`kokoro:${v.id}`}>{v.label}</option>)}
             </select>
             {!phone && <span style={{ flex: 1 }} />}
             {mode === 'chat' && (
