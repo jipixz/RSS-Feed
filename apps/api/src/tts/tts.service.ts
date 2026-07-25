@@ -138,10 +138,12 @@ export class TtsService {
     if (!article) throw new NotFoundException('Artículo no encontrado');
 
     const body = this.sanitizer
-      .toText((article.fullContent || article.excerpt).replace(/<pre[\s\S]*?<\/pre>/gi, '. '))
+      .toSpeech((article.fullContent || article.excerpt).replace(/<pre[\s\S]*?<\/pre>/gi, '. '))
       .slice(0, MAX_TEXT_CHARS);
     if (!body) throw new BadRequestException('El artículo no tiene texto para narrar');
-    const text = `${article.title}. ${body}`;
+    // título como oración propia + doble salto → el motor hace una pausa clara
+    // antes de entrar al cuerpo (se entiende que fue el título)
+    const text = `${article.title}.\n\n${body}`;
 
     const startedAt = new Date();
     const key = this.key(id, engine, voice);

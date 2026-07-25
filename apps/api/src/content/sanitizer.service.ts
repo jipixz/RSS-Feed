@@ -43,4 +43,28 @@ export class SanitizerService {
       .replace(/\s+/g, ' ')
       .trim();
   }
+
+  /**
+   * Texto para TTS: a diferencia de toText(), conserva la estructura como saltos
+   * de línea y garantiza que cada bloque termine en puntuación. Así el motor
+   * (Kokoro/Piper) hace pausas naturales entre título, párrafos y encabezados en
+   * vez de leer todo de corrido.
+   */
+  toSpeech(html: string): string {
+    // los bloques cierran con doble salto (pausa larga); <br> con salto simple
+    const withBreaks = (html ?? '')
+      .replace(/<\/(p|h[1-6]|li|blockquote|tr|div|section|article|figcaption|dd|dt)>/gi, '.\n\n')
+      .replace(/<br\s*\/?>/gi, '\n');
+    const stripped = sanitizeHtml(withBreaks, { allowedTags: [], allowedAttributes: {} });
+    return stripped
+      .replace(/[^\S\n]+/g, ' ') // colapsa espacios pero respeta los \n
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .map((l) => (/[.!?:;…]$/.test(l) ? l : `${l}.`)) // cierra cada línea con puntuación
+      .join('\n')
+      .replace(/\n{3,}/g, '\n\n')
+      .replace(/(\.\s*){2,}/g, '. ') // limpia puntos dobles ("texto..")
+      .trim();
+  }
 }

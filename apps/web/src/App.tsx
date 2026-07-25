@@ -483,7 +483,7 @@ export default function App() {
   const readingMenu = readMenuOpen && (
     <>
       <div onClick={() => setReadMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-      <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 41, background: t.bg, border: `1px solid ${t.border}`, borderRadius: SN.radius.lg, boxShadow: SN.shadow.lg, padding: 12, width: 200 }}>
+      <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 41, background: t.bg, border: `1px solid ${t.border}`, borderRadius: SN.radius.lg, boxShadow: SN.shadow.lg, padding: 12, width: 264 }}>
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.07em', textTransform: 'uppercase', color: t.textTertiary, marginBottom: 8 }}>Tamaño de letra</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <button className="sn-iconbtn" style={{ ...iconBtn, width: 32, height: 32 }} disabled={reading.size === 0}
@@ -496,7 +496,7 @@ export default function App() {
         <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
           {READING_WIDTH_LABELS.map((label, i) => (
             <button key={label} onClick={() => updateReading({ ...reading, width: i as ReadingPrefs['width'] })}
-              style={{ flex: 1, padding: '6px 2px', borderRadius: SN.radius.base, border: `1px solid ${reading.width === i ? t.activeBar : t.border}`, background: reading.width === i ? t.activeBg : t.bg, color: reading.width === i ? t.activeText : t.textSecondary, cursor: 'pointer', fontFamily: SN.font.body, fontSize: 11, fontWeight: 600 }}>
+              style={{ flex: 1, minWidth: 0, padding: '6px 3px', borderRadius: SN.radius.base, border: `1px solid ${reading.width === i ? t.activeBar : t.border}`, background: reading.width === i ? t.activeBg : t.bg, color: reading.width === i ? t.activeText : t.textSecondary, cursor: 'pointer', fontFamily: SN.font.body, fontSize: 10.5, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {label}
             </button>
           ))}
