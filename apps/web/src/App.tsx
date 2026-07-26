@@ -428,13 +428,20 @@ export default function App() {
   }, [selected, measureProgress]);
 
   const onListScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const el = e.currentTarget;
+    // scroll infinito: al acercarse al fondo, carga la siguiente página sola
+    // (la vista "Hoy" no pagina: es una sola respuesta rankeada)
+    if (!digestMode && nextCursor && !loadingList) {
+      const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 600;
+      if (nearBottom) void loadList(false, nextCursor);
+    }
     if (!phone) return;
-    const top = e.currentTarget.scrollTop;
+    const top = el.scrollTop;
     const delta = top - lastScrollTop.current;
     if (top > 80 && delta > 8) setBarsHidden(true);
     else if (delta < -8 || top < 40) setBarsHidden(false);
     lastScrollTop.current = top;
-  }, [phone]);
+  }, [phone, digestMode, nextCursor, loadingList, loadList]);
 
   // ── piezas ────────────────────────────────────────────────────────────────
 
