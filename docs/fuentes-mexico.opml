@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>Señal — fuentes México / Quintana Roo</title>
+  </head>
+  <body>
+    <outline text="Tecnología (español)" title="Tecnología (español)">
+      <outline type="rss" text="Xataka México" title="Xataka México" xmlUrl="https://www.xataka.com.mx/feedburner.xml" htmlUrl="https://www.xataka.com.mx"/>
+      <outline type="rss" text="Genbeta" title="Genbeta" xmlUrl="https://www.genbeta.com/feedburner.xml" htmlUrl="https://www.genbeta.com"/>
+      <outline type="rss" text="Microsiervos" title="Microsiervos" xmlUrl="https://www.microsiervos.com/index.xml" htmlUrl="https://www.microsiervos.com"/>
+      <outline type="rss" text="Hipertextual" title="Hipertextual" xmlUrl="https://hipertextual.com/feed" htmlUrl="https://hipertextual.com"/>
+    </outline>
+    <outline text="Seguridad (español)" title="Seguridad (español)">
+      <outline type="rss" text="Una al día (Hispasec)" title="Una al día (Hispasec)" xmlUrl="https://unaaldia.hispasec.com/feed" htmlUrl="https://unaaldia.hispasec.com"/>
+      <outline type="rss" text="Segu-Info" title="Segu-Info" xmlUrl="https://blog.segu-info.com.ar/feeds/posts/default" htmlUrl="https://blog.segu-info.com.ar"/>
+      <outline type="rss" text="Ciberseguridad México (Google News)" title="Ciberseguridad México (Google News)" xmlUrl="https://news.google.com/rss/search?q=ciberseguridad+M%C3%A9xico+OR+vulnerabilidades&amp;hl=es-419&amp;gl=MX&amp;ceid=MX:es-419"/>
+    </outline>
+    <outline text="México y negocios" title="México y negocios">
+      <outline type="rss" text="Contxto (startups LatAm)" title="Contxto (startups LatAm)" xmlUrl="https://contxto.com/es/feed/" htmlUrl="https://contxto.com"/>
+      <outline type="rss" text="Startups y software México (Google News)" title="Startups y software México (Google News)" xmlUrl="https://news.google.com/rss/search?q=M%C3%A9xico+startups+OR+desarrollo+de+software&amp;hl=es-419&amp;gl=MX&amp;ceid=MX:es-419"/>
+      <outline type="rss" text="Empleos TI México (Google News)" title="Empleos TI México (Google News)" xmlUrl="https://news.google.com/rss/search?q=M%C3%A9xico+empleo+OR+vacantes+(desarrollador+OR+software+OR+TI)&amp;hl=es-419&amp;gl=MX&amp;ceid=MX:es-419"/>
+    </outline>
+    <outline text="Quintana Roo (local)" title="Quintana Roo (local)">
+      <outline type="rss" text="QRoo tecnología/empresas/ciberseguridad (Google News)" title="QRoo tecnología/empresas/ciberseguridad (Google News)" xmlUrl="https://news.google.com/rss/search?q=Quintana+Roo+tecnolog%C3%ADa+OR+empresas+OR+ciberseguridad&amp;hl=es-419&amp;gl=MX&amp;ceid=MX:es-419"/>
+      <outline type="rss" text="QRoo negocios y mercado (Google News)" title="QRoo negocios y mercado (Google News)" xmlUrl="https://news.google.com/rss/search?q=Quintana+Roo+(negocios+OR+mercado+OR+inversi%C3%B3n+OR+econom%C3%ADa)&amp;hl=es-419&amp;gl=MX&amp;ceid=MX:es-419"/>
+      <outline type="rss" text="QRoo empleo tecnología (Google News)" title="QRoo empleo tecnología (Google News)" xmlUrl="https://news.google.com/rss/search?q=(Quintana+Roo+OR+Canc%C3%BAn)+empleo+(tecnolog%C3%ADa+OR+software+OR+TI)&amp;hl=es-419&amp;gl=MX&amp;ceid=MX:es-419"/>
+    </outline>
+  </body>
+</opml>
