@@ -117,3 +117,20 @@ audiolibro con Piper/Kokoro. Solo no hay TL;DR, traducción ni minichat.
 El prompt de los TL;DR está en
 [`prompt.ts`](../apps/api/src/ai/provider/prompt.ts) por si quieres ajustar el tono
 o el idioma.
+
+## Relevancia semántica de "Hoy" (embeddings)
+
+La vista "Hoy" rankea por relevancia a tu perfil de intereses. Con `AI_PROVIDER=ollama`
+usa **embeddings** (significado, no texto literal): así un artículo de política que
+mencione "nestjs" queda lejos de tu perfil tech, y "coche eléctrico" se acerca a tu
+interés "carros" aunque no diga la palabra.
+
+- Modelo: `EMBED_MODEL` (default `nomic-embed-text`). Descárgalo: `ollama pull nomic-embed-text`.
+- Los vectores se calculan **en segundo plano** al final de cada ciclo de ingesta
+  (nunca en el request de "Hoy") y se guardan en la BD; "Hoy" solo los lee.
+- **Degrada solo**: si el modelo no está, no responde, o `AI_PROVIDER` no es ollama,
+  "Hoy" cae al ranking por palabras clave sin romperse.
+- **Cuidado con la VRAM**: correr el modelo de embeddings junto al LLM de los TL;DR
+  (p. ej. gemma de 10 GB) en una GPU de 8 GB puede saturar la memoria y hacer que
+  ambos respondan lentísimo o expiren. Si te pasa: usa un LLM más chico que deje
+  espacio (un 7-8B cabe con nomic en 8 GB), o corre los embeddings en otra máquina.

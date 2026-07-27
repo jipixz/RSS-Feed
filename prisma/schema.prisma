@@ -49,6 +49,7 @@ model Article {
   tldrStatus    String    @default("pending") // pending | done | failed | skipped
   tldrAt        DateTime? // cuándo se generó — usado para el presupuesto diario (RN-05)
   wordCount     Int? // palabras del texto plano — para tiempo de lectura estimado
+  embedding     String? // vector JSON (embeddings) para relevancia semántica de "Hoy"
   isRead        Boolean   @default(false)
   readAt        DateTime?
   isStarred     Boolean   @default(false)

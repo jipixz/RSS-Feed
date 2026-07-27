@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ExtractorService } from '../content/extractor.service';
 import { SanitizerService } from '../content/sanitizer.service';
 import { SummarizerService } from '../ai/summarizer.service';
+import { EmbeddingService } from '../ai/embedding.service';
 
 const FEED_TIMEOUT_MS = 15_000; // § 3.4
 const FEED_CONCURRENCY = 5; // RP-2
@@ -53,6 +54,7 @@ export class IngestService {
     private readonly extractor: ExtractorService,
     private readonly sanitizer: SanitizerService,
     private readonly summarizer: SummarizerService,
+    private readonly embeddings: EmbeddingService,
   ) {}
 
   async ingestAll(): Promise<IngestResult> {
@@ -86,6 +88,10 @@ export class IngestService {
       const ai = await this.summarizer.summarizePending();
       result.summarized = ai.summarized;
       tokensUsed = ai.tokensUsed;
+
+      // Relevancia semántica de "Hoy": embeddings en segundo plano (fuera del
+      // request del usuario). No bloquea nada: si falla, se reintenta el próximo ciclo.
+      await this.embeddings.embedPending().catch((e: Error) => this.logger.warn(`Embeddings: ${e.message}`));
 
       return result;
     } finally {
