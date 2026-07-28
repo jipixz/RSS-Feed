@@ -663,7 +663,7 @@ export default function App() {
     </div>
   );
 
-  const articleRow = (a: ArticleListItem, opts?: { score?: number }) => {
+  const articleRow = (a: ArticleListItem, opts?: { score?: number; relevant?: boolean }) => {
     const isSel = a.id === selectedId && !phone;
     const dx = swipe?.id === a.id ? swipe.dx : 0;
     const actionFor = dx > 0 ? gestures.right : gestures.left;
@@ -680,7 +680,7 @@ export default function App() {
           {metaLine(a)}
           <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 15, lineHeight: 1.35, color: a.isRead ? t.textTertiary : t.textPrimary, marginBottom: 4 }}>
             {a.title}
-            {showDigestCard && (opts!.score ?? 0) >= 4 && (
+            {showDigestCard && opts!.relevant && (
               <span style={{ marginLeft: 8, verticalAlign: 'middle', display: 'inline-flex', alignItems: 'center', gap: 3, background: t.activeBg, color: t.activeText, borderRadius: SN.radius.full, padding: '1px 8px', fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                 <IcSpark s={10} /> relevante
               </span>
@@ -729,7 +729,13 @@ export default function App() {
           <div style={{ fontSize: 13, color: t.textTertiary }}>Pulsa Actualizar o espera al próximo ciclo.</div>
         </div>
       ) : (
-        digestItems.map((a) => articleRow(a, { score: a.score }))
+        (() => {
+          // "relevante" es relativo al tope de la lista (funciona con score
+          // semántico 0–100 o de keywords), marcando solo lo más afín.
+          const maxScore = digestItems.reduce((m, a) => Math.max(m, a.score), 0);
+          const threshold = Math.max(4, maxScore * 0.82);
+          return digestItems.map((a) => articleRow(a, { score: a.score, relevant: a.score >= threshold }));
+        })()
       )}
     </div>
   );

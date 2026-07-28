@@ -18,6 +18,7 @@ export class EmbeddingService {
   private readonly logger = new Logger(EmbeddingService.name);
   private readonly baseUrl: string;
   private readonly model: string;
+  private readonly numGpu: number; // capas en GPU; 0 = CPU (no le quita VRAM al LLM)
   private readonly on: boolean;
   private warned = false;
   // Si Ollama no responde, no reintentamos por un rato: evita que "Hoy" y la
@@ -31,6 +32,9 @@ export class EmbeddingService {
   ) {
     this.baseUrl = (config.get<string>('OLLAMA_BASE_URL') ?? 'http://localhost:11434').replace(/\/+$/, '');
     this.model = config.get<string>('EMBED_MODEL') ?? 'nomic-embed-text';
+    // Por defecto CPU (num_gpu=0): nomic es diminuto y así no compite por la VRAM
+    // con el LLM de los TL;DR. Sube EMBED_NUM_GPU si tienes GPU de sobra.
+    this.numGpu = Number(config.get<string>('EMBED_NUM_GPU') ?? '0');
     // Solo tiene sentido con Ollama; con anthropic/none se usa el ranking por keywords.
     this.on = (config.get<string>('AI_PROVIDER') ?? 'none').toLowerCase() === 'ollama';
   }
@@ -52,7 +56,12 @@ export class EmbeddingService {
         // keep_alive lo deja caliente para el resto del lote.
         signal: AbortSignal.timeout(timeoutMs),
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ model: this.model, prompt: input, keep_alive: '30m' }),
+        body: JSON.stringify({
+          model: this.model,
+          prompt: input,
+          keep_alive: '30m',
+          options: { num_gpu: this.numGpu }, // 0 = CPU, deja la GPU libre para el LLM
+        }),
       });
       if (!res.ok) {
         this.warnOnce(`Ollama /api/embeddings respondió ${res.status} (¿corriste "ollama pull ${this.model}"?)`);

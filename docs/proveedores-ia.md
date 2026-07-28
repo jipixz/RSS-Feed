@@ -130,7 +130,7 @@ interés "carros" aunque no diga la palabra.
   (nunca en el request de "Hoy") y se guardan en la BD; "Hoy" solo los lee.
 - **Degrada solo**: si el modelo no está, no responde, o `AI_PROVIDER` no es ollama,
   "Hoy" cae al ranking por palabras clave sin romperse.
-- **Cuidado con la VRAM**: correr el modelo de embeddings junto al LLM de los TL;DR
-  (p. ej. gemma de 10 GB) en una GPU de 8 GB puede saturar la memoria y hacer que
-  ambos respondan lentísimo o expiren. Si te pasa: usa un LLM más chico que deje
-  espacio (un 7-8B cabe con nomic en 8 GB), o corre los embeddings en otra máquina.
+- **VRAM protegida**: por defecto los embeddings corren en **CPU** (`EMBED_NUM_GPU=0`)
+  — nomic es diminuto (~50 ms por artículo en CPU) y así **no le quita nada de VRAM
+  al LLM** de los TL;DR. gemma se queda dueña de la GPU. Si te sobra GPU y quieres
+  aún más velocidad, sube `EMBED_NUM_GPU`.
