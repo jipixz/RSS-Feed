@@ -62,6 +62,9 @@ export default function App() {
   const [digestMode, setDigestMode] = useState(false);
   const [unreadOnly, setUnreadOnly] = useState(false);
   const [search, setSearch] = useState('');
+  const [semantic, setSemantic] = useState(false); // búsqueda por significado
+  const [semItems, setSemItems] = useState<ArticleListItem[] | null>(null);
+  const [semLoading, setSemLoading] = useState(false);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const [items, setItems] = useState<ArticleListItem[]>([]);
@@ -81,6 +84,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<ArticleDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [related, setRelated] = useState<ArticleListItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
@@ -102,6 +106,7 @@ export default function App() {
   const edgeRef = useRef<number | null>(null);
 
   const articlePaneRef = useRef<HTMLElement | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const lastScrollTop = useRef(0);
   const [readProgress, setReadProgress] = useState(0);
   const [backToast, setBackToast] = useState(false);
@@ -190,11 +195,30 @@ export default function App() {
     if (digestMode) void loadDigest();
   }, [digestMode, loadDigest]);
 
+  // Búsqueda semántica (por significado). Si el backend no tiene embeddings,
+  // devuelve semantic:false y volvemos a la búsqueda de texto normal.
+  useEffect(() => {
+    const q = debouncedSearch.trim();
+    if (!semantic || !q || digestMode) { setSemItems(null); return; }
+    let cancelled = false;
+    setSemLoading(true);
+    api.semanticSearch(q)
+      .then((r) => {
+        if (cancelled) return;
+        if (!r.semantic) { setSemantic(false); setSemItems(null); }
+        else setSemItems(r.items);
+      })
+      .catch(() => { if (!cancelled) setSemItems([]); })
+      .finally(() => { if (!cancelled) setSemLoading(false); });
+    return () => { cancelled = true; };
+  }, [semantic, debouncedSearch, digestMode]);
+
   // ── artículo ──────────────────────────────────────────────────────────────
   const open = useCallback(async (id: string) => {
     setSelectedId(id);
     setLoadingDetail(true);
     setDetail(null);
+    setRelated([]);
     articlePaneRef.current?.scrollTo(0, 0);
     try {
       const d = await api.articleDetail(id);
@@ -205,6 +229,8 @@ export default function App() {
         await api.setRead(id, true);
         void refreshFolders();
       }
+      // relacionados por significado (no bloquea la lectura)
+      api.relatedArticles(id).then((r) => { if (r.length) setRelated(r); }).catch(() => undefined);
     } catch {
       setDetail(null);
     } finally {
@@ -443,6 +469,22 @@ export default function App() {
     lastScrollTop.current = top;
   }, [phone, digestMode, nextCursor, loadingList, loadList]);
 
+  // Scroll infinito robusto: un observer sobre el sentinela del fondo dispara la
+  // siguiente página en cuanto entra en vista (cubre pantallas altas donde el
+  // onScroll podría no alcanzar a disparar).
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el || !nextCursor || digestMode) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !loadingList) void loadList(false, nextCursor);
+      },
+      { rootMargin: '400px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [nextCursor, digestMode, loadingList, loadList]);
+
   // ── piezas ────────────────────────────────────────────────────────────────
 
   const folderEntries = useMemo(
@@ -624,11 +666,31 @@ export default function App() {
   );
 
   const searchBox = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 12px', border: `1px solid ${t.border}`, borderRadius: SN.radius.base, background: t.surface1, marginBottom: 8 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 6px 0 12px', border: `1px solid ${semantic ? t.activeBar : t.border}`, borderRadius: SN.radius.base, background: t.surface1, marginBottom: 8 }}>
       <span style={{ color: t.textMuted, display: 'flex' }}><IcSearch s={16} /></span>
-      <input className="sn-input" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en tus feeds…"
+      <input className="sn-input" value={search} onChange={(e) => setSearch(e.target.value)}
+        placeholder={semantic ? 'Buscar por significado…' : 'Buscar en tus feeds…'}
         style={{ border: 'none', outline: 'none', background: 'transparent', flex: 1, fontFamily: SN.font.body, fontSize: 14, color: t.textPrimary, minWidth: 0 }} />
       {search && <span className="sn-chip-x" onClick={() => setSearch('')} style={{ color: t.textMuted }}><IcX s={14} /></span>}
+      <button onClick={() => setSemantic((v) => !v)} title={semantic ? 'Búsqueda semántica: activada' : 'Buscar por significado (IA)'}
+        style={{ display: 'flex', alignItems: 'center', gap: 4, border: 'none', cursor: 'pointer', borderRadius: SN.radius.full, padding: '4px 8px', fontFamily: SN.font.body, fontSize: 11, fontWeight: 700, background: semantic ? t.activeBg : 'transparent', color: semantic ? t.activeText : t.textMuted }}>
+        <IcSpark s={13} />IA
+      </button>
+    </div>
+  );
+
+  // resultados de la búsqueda semántica (reemplazan la lista cuando está activa)
+  const semanticView = semantic && !!debouncedSearch.trim() && !digestMode;
+  const semanticPane = (
+    <div className="scroll-y" style={{ flex: 1, minHeight: 0 }}>
+      <div style={{ padding: '10px 16px', fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: t.textTertiary, display: 'flex', alignItems: 'center', gap: 6 }}>
+        <IcSpark s={12} /> Por significado{semLoading ? ' · buscando…' : ''}
+      </div>
+      {!semLoading && semItems && semItems.length === 0 ? (
+        <div style={{ padding: '32px 24px', textAlign: 'center', color: t.textTertiary, fontSize: 13 }}>Sin coincidencias por significado.</div>
+      ) : (
+        (semItems ?? []).map((a) => articleRow(a))
+      )}
     </div>
   );
 
@@ -764,7 +826,7 @@ export default function App() {
         )}
       </div>
 
-      {digestMode ? digestPane : (
+      {digestMode ? digestPane : semanticView ? semanticPane : (
         <div className="scroll-y" onScroll={onListScroll} style={{ flex: 1, minHeight: 0 }}>
           {listError ? (
             <div style={{ padding: '48px 24px', textAlign: 'center' }}>
@@ -783,10 +845,9 @@ export default function App() {
             <>
               {items.map((a) => articleRow(a))}
               {nextCursor && (
-                <div style={{ padding: 16, textAlign: 'center' }}>
-                  <button style={ghostBtn} className="sn-iconbtn" disabled={loadingList} onClick={() => void loadList(false, nextCursor)}>
-                    {loadingList ? 'Cargando…' : 'Cargar más'}
-                  </button>
+                // sentinela: al tocar el fondo se carga la siguiente página sola
+                <div ref={loadMoreRef} style={{ padding: 18, display: 'flex', justifyContent: 'center', color: t.textMuted }}>
+                  <span style={{ display: 'flex', animation: 'sn-spin 1s linear infinite' }}><IcRefresh s={18} /></span>
                 </div>
               )}
             </>
@@ -866,6 +927,27 @@ export default function App() {
           {selected.contentStatus === 'full' ? 'Contenido completo cargado' : 'Resumen del feed — abre el original para el texto completo'}
         </span>
       </div>
+
+      {related.length > 0 && (
+        <div style={{ marginTop: 32, borderTop: `1px solid ${t.border}`, paddingTop: 18 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, color: t.activeText }}>
+            <IcSpark s={14} />
+            <span style={{ fontFamily: SN.font.body, fontWeight: 700, fontSize: 12, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Relacionados</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {related.map((r) => (
+              <div key={r.id} onClick={() => void open(r.id)} className="sn-hover"
+                style={{ display: 'flex', gap: 10, padding: '10px 12px', borderRadius: SN.radius.base, border: `1px solid ${t.borderSubtle}`, background: t.surface1, cursor: 'pointer' }}>
+                <span style={{ color: r.dotColor, display: 'flex', flexShrink: 0, paddingTop: 3 }}><IcCircle s={8} /></span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: SN.font.title, fontWeight: 600, fontSize: 14, lineHeight: 1.3, color: t.textPrimary }}>{r.title}</div>
+                  <div style={{ fontSize: 12, color: t.textMuted, marginTop: 2 }}>{r.source} · {timeAgo(r.publishedAt)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 

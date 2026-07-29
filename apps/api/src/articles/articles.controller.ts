@@ -1,8 +1,15 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { IsString, Length } from 'class-validator';
 import { ArticlesService } from './articles.service';
 import { SummarizerService } from '../ai/summarizer.service';
 import { ListArticlesQueryDto } from './dto/list-articles.dto';
 import { MarkAllReadDto, SetReadDto, SetStarDto } from './dto/update-flags.dto';
+
+class SemanticQueryDto {
+  @IsString()
+  @Length(1, 300)
+  q!: string;
+}
 
 @Controller('articles')
 export class ArticlesController {
@@ -21,9 +28,21 @@ export class ArticlesController {
     return this.articles.markAllRead(body.folder);
   }
 
+  /** Búsqueda semántica en la biblioteca. Va ANTES de :id para no ser capturada. */
+  @Get('semantic')
+  semantic(@Query() query: SemanticQueryDto) {
+    return this.articles.semanticSearch(query.q);
+  }
+
   @Get(':id')
   detail(@Param('id') id: string) {
     return this.articles.detail(id);
+  }
+
+  /** Artículos relacionados por cercanía semántica. */
+  @Get(':id/related')
+  related(@Param('id') id: string) {
+    return this.articles.related(id);
   }
 
   @Patch(':id/read')

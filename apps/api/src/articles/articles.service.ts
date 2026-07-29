@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { EmbeddingService } from '../ai/embedding.service';
 import { excludeMutesWhere } from '../common/mute-filter';
 import { dotColorFor } from '../common/folder-colors';
 import { ListArticlesQueryDto } from './dto/list-articles.dto';
@@ -44,7 +45,54 @@ export interface ArticleListItem {
 
 @Injectable()
 export class ArticlesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly embeddings: EmbeddingService,
+  ) {}
+
+  /** Toma ids rankeados y devuelve los ArticleListItem en ese mismo orden (sin muteados). */
+  private async listByRankedIds(ranked: { id: string; score: number }[]): Promise<ArticleListItem[]> {
+    if (ranked.length === 0) return [];
+    const ids = ranked.map((r) => r.id);
+    const mutes = await this.muteTerms();
+    const rows = await this.prisma.article.findMany({
+      where: { AND: [{ id: { in: ids } }, excludeMutesWhere(mutes)] },
+      select: listSelect,
+    });
+    const byId = new Map(rows.map((r) => [r.id, this.toListItem(r)]));
+    return ids.map((id) => byId.get(id)).filter((x): x is ArticleListItem => !!x);
+  }
+
+  /** Búsqueda SEMÁNTICA: por significado, no por texto literal. `semantic:false`
+   *  si los embeddings no están disponibles (el front cae a la búsqueda normal). */
+  async semanticSearch(q: string): Promise<{ items: ArticleListItem[]; semantic: boolean }> {
+    const qv = await this.embeddings.embed(`search_query: ${q}`);
+    if (!qv) return { items: [], semantic: false };
+    const ranked = await this.embeddings.rank(qv, { limit: 40 });
+    return { items: await this.listByRankedIds(ranked), semantic: true };
+  }
+
+  /** Artículos relacionados por cercanía semántica (para el pie del artículo). */
+  async related(id: string, limit = 5): Promise<ArticleListItem[]> {
+    const art = await this.prisma.article.findUnique({
+      where: { id },
+      select: { embedding: true, title: true, excerpt: true },
+    });
+    if (!art) throw new NotFoundException('Artículo no encontrado');
+    let vec: number[] | null = null;
+    if (art.embedding) {
+      try {
+        vec = JSON.parse(art.embedding) as number[];
+      } catch {
+        /* recalcula abajo */
+      }
+    }
+    // si aún no tiene embedding (artículo viejo), lo calcula al vuelo (CPU ~50 ms)
+    if (!vec) vec = await this.embeddings.embed(`search_document: ${art.title}. ${art.excerpt}`);
+    if (!vec) return [];
+    const ranked = await this.embeddings.rank(vec, { limit, excludeId: id });
+    return this.listByRankedIds(ranked);
+  }
 
   private async muteTerms(): Promise<string[]> {
     const mutes = await this.prisma.mute.findMany({ select: { term: true } });

@@ -151,6 +151,12 @@ export const api = {
   articleDetail(id: string): Promise<ArticleDetail> {
     return request(`/api/articles/${id}`);
   },
+  semanticSearch(q: string): Promise<{ items: ArticleListItem[]; semantic: boolean }> {
+    return request(`/api/articles/semantic?q=${encodeURIComponent(q)}`);
+  },
+  relatedArticles(id: string): Promise<ArticleListItem[]> {
+    return request(`/api/articles/${id}/related`);
+  },
   setRead(id: string, read: boolean): Promise<{ ok: true }> {
     return request(`/api/articles/${id}/read`, { method: 'PATCH', body: JSON.stringify({ read }) });
   },

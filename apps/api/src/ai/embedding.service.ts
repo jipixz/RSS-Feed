@@ -103,6 +103,30 @@ export class EmbeddingService {
     return done;
   }
 
+  /**
+   * Rankea artículos con embedding por similitud coseno contra un vector de
+   * consulta. Base de la búsqueda semántica y de "artículos relacionados".
+   */
+  async rank(query: number[], opts: { limit: number; excludeId?: string }): Promise<{ id: string; score: number }[]> {
+    const rows = await this.prisma.article.findMany({
+      where: { embedding: { not: null } },
+      select: { id: true, embedding: true },
+    });
+    const scored: { id: string; score: number }[] = [];
+    for (const r of rows) {
+      if (r.id === opts.excludeId || !r.embedding) continue;
+      let v: number[];
+      try {
+        v = JSON.parse(r.embedding) as number[];
+      } catch {
+        continue;
+      }
+      scored.push({ id: r.id, score: EmbeddingService.cosine(query, v) });
+    }
+    scored.sort((a, b) => b.score - a.score);
+    return scored.slice(0, opts.limit);
+  }
+
   private warnOnce(msg: string) {
     if (this.warned) return;
     this.warned = true;
