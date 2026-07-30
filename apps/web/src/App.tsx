@@ -3,7 +3,7 @@ import DOMPurify from 'dompurify';
 import { SN, THEMES, THEME_LABELS, ThemeKey, applyAccent } from './tokens';
 import {
   IcActivity, IcBack, IcChat, IcCheck, IcCircle, IcCode, IcCpu, IcDb, IcExt, IcFilter, IcGear, IcInbox,
-  IcPalette, IcPlus, IcRefresh, IcSearch, IcShield, IcSpark, IcStar, IcStarF, IcTag, IcType, IcX, LogoMark,
+  IcPalette, IcPlay, IcPlus, IcRefresh, IcSearch, IcShield, IcSpark, IcStar, IcStarF, IcTag, IcType, IcX, LogoMark,
 } from './icons';
 import { api, ArticleDetail, ArticleListItem, DigestItem, FeedInfo, Folder, timeAgo } from './api';
 import { SettingsModal } from './SettingsModal';
@@ -11,7 +11,8 @@ import { DiscoverModal } from './DiscoverModal';
 import { LiveConsole } from './LiveConsole';
 import { ChatSheet } from './ChatSheet';
 import { SelectionTranslator } from './SelectionTranslator';
-import { AudioPlayer } from './AudioPlayer';
+import { AudioQueue, AudioQueueHandle, QueueTrack } from './AudioQueue';
+import { ListenMenu, defaultEngineVoice } from './ListenMenu';
 import {
   ACCENT_PRESETS, GesturePrefs, READING_SIZES, READING_WIDTH_LABELS, READING_WIDTHS, ReadingPrefs,
   SIDEBAR_MAX, SIDEBAR_MIN, loadAccent, loadGestures, loadReading, loadSidebarWidth,
@@ -107,6 +108,7 @@ export default function App() {
 
   const articlePaneRef = useRef<HTMLElement | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const audioQueueRef = useRef<AudioQueueHandle>(null);
   const lastScrollTop = useRef(0);
   const [readProgress, setReadProgress] = useState(0);
   const [backToast, setBackToast] = useState(false);
@@ -180,6 +182,13 @@ export default function App() {
   useEffect(() => {
     if (!digestMode) void loadList(true);
   }, [loadList, digestMode]);
+
+  // Encola todo el "Hoy" con el motor/voz recordados y arranca a reproducir.
+  const playDigest = useCallback(() => {
+    const { engine, voice } = defaultEngineVoice();
+    const tracks: QueueTrack[] = digestItems.map((a) => ({ id: a.id, title: a.title, source: a.source, imageUrl: a.imageUrl, engine, voice }));
+    if (tracks.length) audioQueueRef.current?.playAll(tracks);
+  }, [digestItems]);
 
   const loadDigest = useCallback(async () => {
     setLoadingDigest(true);
@@ -779,8 +788,16 @@ export default function App() {
 
   const digestPane = (
     <div className="scroll-y" onScroll={onListScroll} style={{ flex: 1, minHeight: 0 }}>
-      <div style={{ padding: '12px 16px 6px', color: t.textMuted, fontSize: 12.5 }}>
-        Lo más relevante de las últimas 24 h según tus intereses (editables en Ajustes ⚙).
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px 6px' }}>
+        <div style={{ flex: 1, color: t.textMuted, fontSize: 12.5 }}>
+          Lo más relevante de las últimas 24 h según tus intereses (editables en Ajustes ⚙).
+        </div>
+        {digestItems.length > 0 && (
+          <button className="sn-iconbtn" onClick={playDigest} title="Escuchar el Hoy en cola"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, height: 32, padding: '0 12px', borderRadius: SN.radius.full, border: `1px solid ${t.activeBar}`, background: t.activeBg, color: t.activeText, fontFamily: SN.font.body, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', flexShrink: 0 }}>
+            <IcPlay s={12} /> Escuchar
+          </button>
+        )}
       </div>
       {loadingDigest ? (
         <div style={{ padding: '48px 24px', textAlign: 'center', color: t.textTertiary, fontSize: 14 }}>Armando tu resumen…</div>
@@ -884,7 +901,9 @@ export default function App() {
             {selected.readingMinutes && <span style={{ fontSize: 13, color: t.textMuted }}>· {selected.readingMinutes} min</span>}
           </div>
           <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
-            <AudioPlayer t={t} article={selected} phone={phone} />
+            <ListenMenu t={t} phone={phone} article={selected}
+              onPlay={(tr) => audioQueueRef.current?.playNow(tr)}
+              onEnqueue={(tr) => audioQueueRef.current?.enqueue(tr)} />
             <button className="sn-iconbtn" style={iconBtn} onClick={() => { setReadMenuOpen((v) => !v); setThemeMenuOpen(false); }} title="Lectura"><IcType s={16} /></button>
             <button className="sn-iconbtn" style={{ ...iconBtn, color: selected.isStarred ? SN.brand.coral : t.textSecondary }} onClick={() => void toggleStar(selected.id, !selected.isStarred)} title="Guardar">
               {selected.isStarred ? <IcStarF s={17} /> : <IcStar s={17} />}
@@ -975,7 +994,9 @@ export default function App() {
         <span style={{ flex: 1 }} />
         {selected && (
           <>
-            <AudioPlayer t={t} article={selected} phone={phone} />
+            <ListenMenu t={t} phone={phone} article={selected}
+              onPlay={(tr) => audioQueueRef.current?.playNow(tr)}
+              onEnqueue={(tr) => audioQueueRef.current?.enqueue(tr)} />
             <button className="sn-iconbtn" style={iconBtn} onClick={() => { setReadMenuOpen((v) => !v); }} title="Lectura"><IcType s={16} /></button>
             <button className="sn-iconbtn" style={{ ...iconBtn, color: selected.isStarred ? SN.brand.coral : t.textSecondary }} onClick={() => void toggleStar(selected.id, !selected.isStarred)} title="Guardar">
               {selected.isStarred ? <IcStarF s={17} /> : <IcStar s={17} />}
@@ -1118,6 +1139,7 @@ export default function App() {
 
       {showConsole && <LiveConsole t={t} phone={phone} onClose={() => setShowConsole(false)} />}
       {showChat && <ChatSheet t={t} phone={phone} onClose={() => setShowChat(false)} />}
+      <AudioQueue ref={audioQueueRef} t={t} phone={phone} />
 
       {showDiscover && (
         <DiscoverModal

@@ -54,6 +54,12 @@ export const IcGoogle = (p: IconProps) => (
   </svg>
 );
 export const IcChat = (p: IconProps) => (<svg {...I(p)}><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>);
+export const IcPlay = (p: IconProps) => (<svg {...I(p)} fill="currentColor" stroke="none"><path d="M6 4l14 8-14 8z"/></svg>);
+export const IcPause = (p: IconProps) => (<svg {...I(p)} fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>);
+export const IcNext = (p: IconProps) => (<svg {...I(p)} fill="currentColor" stroke="none"><path d="M5 4l10 8-10 8z"/><rect x="17" y="4" width="3" height="16" rx="1"/></svg>);
+export const IcPrev = (p: IconProps) => (<svg {...I(p)} fill="currentColor" stroke="none"><path d="M19 4L9 12l10 8z"/><rect x="4" y="4" width="3" height="16" rx="1"/></svg>);
+export const IcList = (p: IconProps) => (<svg {...I(p)}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>);
+export const IcPlusCircle = (p: IconProps) => (<svg {...I(p)}><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>);
 export const IcSend = (p: IconProps) => (<svg {...I(p)}><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg>);
 export const IcVolume = (p: IconProps) => (<svg {...I(p)}><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>);
 export const IcVolumeX = (p: IconProps) => (<svg {...I(p)}><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m23 9-6 6M17 9l6 6"/></svg>);
