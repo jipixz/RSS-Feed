@@ -6,7 +6,9 @@
     "build": "nest build",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
@@ -30,9 +32,12 @@
   "devDependencies": {
     "@nestjs/cli": "^11.0.24",
     "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
     "@types/jsdom": "^28.0.3",
     "@types/node": "^26.1.1",
     "@types/sanitize-html": "^2.16.1",
+    "jest": "^30.4.2",
+    "ts-jest": "^29.4.12",
     "typescript": "^5.9.3"
   }
 }

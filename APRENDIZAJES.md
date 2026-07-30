@@ -24,6 +24,7 @@ NestJS, patrones de diseño, arquitectura, seguridad y preguntas de entrevista.
 13. [Seguridad: secretos, defense in depth, Cloudflare Access](#13-seguridad)
 14. [Arquitectura general](#14-arquitectura-general)
 15. [La capa de IA completa: infraestructura, Strategy y TTS](#15-la-capa-de-ia)
+16. [Tests con Jest: unitarios, mocks y por qué la DI ayuda](#16-tests-con-jest)
 
 ---
 
@@ -623,3 +624,81 @@ de cada llamada al modelo, en tiempo real, desde el teléfono.
 > diario, caché de resultados costosos (TL;DR en BD, audio en disco) y
 > observabilidad por SSE. Cambiar de modelo local a Claude API es editar una
 > línea del .env."
+
+---
+
+## 16. Tests con Jest
+
+### Lo primero: `describe`/`it`/`expect` SON JavaScript
+No es un "lenguaje de Jest". Son funciones que Jest define como globales antes de
+correr el archivo de test. Se ven raras porque reciben un *callback*:
+
+```js
+describe('grupo', () => {   //  describe(nombre, fn) → agrupa tests
+  it('hace X', () => {      //  it(nombre, fn) → un caso (alias de test)
+    expect(2 + 2).toBe(4);  //  expect(valor).matcher(esperado) → aserción
+  });
+});
+```
+`expect(x)` devuelve un objeto con *matchers*: `.toBe` (igualdad estricta),
+`.toEqual` (igualdad profunda de objetos), `.toBeNull`, `.toContain`, `.toMatch`
+(regex), `.toBeCloseTo` (flotantes), `.resolves`/`.rejects` (promesas), y `.not`
+para invertir. Nada mágico: podrías escribir tu propio `expect` en 5 líneas.
+
+### Tipos de test
+- **Unitario**: una función/clase aislada, dependencias falsas (mocks). Rápido, el 80%.
+- **Integración**: varias piezas juntas (p. ej. service + SQLite de prueba).
+- **E2E**: la app entera por HTTP (`supertest`): levantas Nest y pegas a `/api/...`.
+
+### Por qué la DI hace todo testeable
+Como las dependencias entran por el constructor, en el test le pasas dobles en vez
+de la BD/Ollama reales. Ejemplo real (degradación sin Ollama, sin red ni BD):
+
+```ts
+const fakeConfig = { get: (k) => (k === 'AI_PROVIDER' ? 'none' : undefined) };
+const svc = new EmbeddingService(fakeConfig as any, {} as any); // prisma no se usa aquí
+expect(svc.isEnabled()).toBe(false);
+await expect(svc.embed('hola')).resolves.toBeNull(); // no llama a la red
+```
+Esa es LA respuesta a "¿por qué DI?" en entrevista: **testabilidad**.
+
+### Mocks de módulos: `jest.mock`
+Cuando un módulo importa algo pesado o con efectos (aquí `sanitize-html` arrastra
+`htmlparser2`, que es ESM y Jest no compila), lo reemplazas por una versión falsa:
+
+```ts
+jest.mock('sanitize-html', () => {
+  const strip = (html) => String(html ?? '').replace(/<[^>]*>/g, '');
+  strip.simpleTransform = () => () => ({}); // el constructor lo usa
+  return { __esModule: true, default: strip };
+});
+```
+`jest.mock` se "sube" (hoisting) arriba de los imports, así el módulo real nunca
+se carga. Sirve para aislar tu lógica y para esquivar dependencias problemáticas.
+
+### El tooling en este repo
+- Deps: `jest`, `ts-jest`, `@types/jest` (dev). `ts-jest` compila TS al vuelo.
+- `apps/api/jest.config.js`: `preset: 'ts-jest'`, `testEnvironment: 'node'`,
+  `rootDir: 'src'`, `testRegex: '.*\.spec\.ts$'`.
+- Convención: `archivo.spec.ts` junto al código (`dedupe.spec.ts` al lado de `dedupe.ts`).
+- Correr: `pnpm --filter api test` (o `pnpm --filter api test:watch` para modo watch).
+
+### Qué se testeó primero (y por qué)
+Las **funciones puras** (entrada→salida, sin dependencias) son el mejor punto de
+partida: `dedupeKey`, `SanitizerService.toSpeech`, `EmbeddingService.cosine`,
+`readingMinutes`. Más un caso con **DI mockeada** (`EmbeddingService` degradando
+sin Ollama). Total inicial: 20 tests en 4 suites.
+
+### Anatomía de un buen test
+1. **Arrange**: preparas datos/dobles.
+2. **Act**: llamas a la función.
+3. **Assert**: `expect(...)` sobre el resultado.
+Un test por comportamiento, nombre que se lee como frase, y que falle por UNA
+razón clara. No testees detalles internos; testea el contrato observable.
+
+### Para entrevista
+- "¿Unitario vs integración vs e2e?" → aislamiento vs varias piezas vs app completa.
+- "¿Cómo pruebas algo que llama a una API externa?" → inyectas un mock del cliente
+  (DI) o `jest.mock` del módulo; verificas con `jest.fn()` que se llamó como esperabas.
+- "¿Qué es un mock/spy/stub?" → doble que reemplaza (mock), que además registra
+  llamadas (spy), o que devuelve datos fijos (stub). `jest.fn()` los cubre.
