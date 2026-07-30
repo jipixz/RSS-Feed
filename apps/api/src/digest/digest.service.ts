@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmbeddingService } from '../ai/embedding.service';
+import { dedupeKey } from '../common/dedupe';
 import { excludeMutesWhere } from '../common/mute-filter';
 import { dotColorFor } from '../common/folder-colors';
 import { readingMinutes } from '../articles/articles.service';
@@ -23,19 +24,6 @@ export interface DigestItem {
 }
 
 const CANDIDATE_LIMIT = 400;
-
-/** Normaliza un título para detectar la misma noticia entre fuentes distintas. */
-function dedupeKey(title: string, link: string): string {
-  const t = title
-    .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '') // quita acentos
-    .replace(/[^a-z0-9]+/g, ' ')
-    .trim();
-  if (t.length >= 12) return `t:${t}`;
-  // títulos muy cortos/ambiguos: cae al link normalizado (mismo artículo externo)
-  const l = link.toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/[?#].*$/, '').replace(/\/+$/, '');
-  return `l:${l}`;
-}
 
 /**
  * Vista "Hoy": artículos de las últimas N horas rankeados por relevancia al

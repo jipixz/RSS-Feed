@@ -127,6 +127,13 @@ export class EmbeddingService {
     return scored.slice(0, opts.limit);
   }
 
+  /** Ping barato para mantener el modelo cargado (keep_alive) entre ciclos de
+   *  ingesta, y así la 1ª búsqueda/relacionados del usuario no pague cold-start. */
+  async warm(): Promise<void> {
+    if (!this.on) return;
+    await this.embed('search_query: keepalive');
+  }
+
   private warnOnce(msg: string) {
     if (this.warned) return;
     this.warned = true;

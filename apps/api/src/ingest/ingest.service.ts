@@ -91,7 +91,12 @@ export class IngestService {
 
       // Relevancia semántica de "Hoy": embeddings en segundo plano (fuera del
       // request del usuario). No bloquea nada: si falla, se reintenta el próximo ciclo.
-      await this.embeddings.embedPending().catch((e: Error) => this.logger.warn(`Embeddings: ${e.message}`));
+      const embedded = await this.embeddings
+        .embedPending()
+        .catch((e: Error) => (this.logger.warn(`Embeddings: ${e.message}`), 0));
+      // Si no hubo nada que embeber, un ping para dejar el modelo caliente
+      // (keep_alive 30m) — evita cold-start en la 1ª búsqueda del usuario.
+      if (!embedded) await this.embeddings.warm().catch(() => undefined);
 
       return result;
     } finally {

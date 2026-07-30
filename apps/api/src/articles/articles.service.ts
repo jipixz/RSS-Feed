@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmbeddingService } from '../ai/embedding.service';
+import { dedupeKey } from '../common/dedupe';
 import { excludeMutesWhere } from '../common/mute-filter';
 import { dotColorFor } from '../common/folder-colors';
 import { ListArticlesQueryDto } from './dto/list-articles.dto';
@@ -9,6 +10,7 @@ import { ListArticlesQueryDto } from './dto/list-articles.dto';
 const listSelect = {
   id: true,
   title: true,
+  link: true, // para el dedupe entre fuentes
   excerpt: true,
   tldr: true,
   publishedAt: true,
@@ -138,11 +140,23 @@ export class ArticlesService {
     ]);
 
     const hasMore = rows.length > query.limit;
-    const items = rows.slice(0, query.limit).map((row) => this.toListItem(row));
+    // Dedupe la misma noticia entre fuentes (HN/Lobsters) conservando la primera
+    // aparición (= la más reciente, ya que van por fecha desc). No reordena.
+    const seen = new Set<string>();
+    const deduped = rows.filter((r) => {
+      const k = dedupeKey(r.title, r.link);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    const items = deduped.slice(0, query.limit).map((row) => this.toListItem(row));
+    const nextCursor = hasMore
+      ? (items.length ? items[items.length - 1].id : rows[rows.length - 1].id)
+      : null;
 
     return {
       items,
-      nextCursor: hasMore ? items[items.length - 1].id : null,
+      nextCursor,
       hiddenByMutes: totalCount - visibleCount, // ESC-04
     };
   }
