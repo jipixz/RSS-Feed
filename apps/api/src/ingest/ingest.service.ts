@@ -7,6 +7,7 @@ import { ExtractorService } from '../content/extractor.service';
 import { SanitizerService } from '../content/sanitizer.service';
 import { SummarizerService } from '../ai/summarizer.service';
 import { EmbeddingService } from '../ai/embedding.service';
+import { CategorizationService } from '../ai/categorization.service';
 
 const FEED_TIMEOUT_MS = 15_000; // § 3.4
 const FEED_CONCURRENCY = 5; // RP-2
@@ -55,6 +56,7 @@ export class IngestService {
     private readonly sanitizer: SanitizerService,
     private readonly summarizer: SummarizerService,
     private readonly embeddings: EmbeddingService,
+    private readonly categorization: CategorizationService,
   ) {}
 
   async ingestAll(): Promise<IngestResult> {
@@ -97,6 +99,10 @@ export class IngestService {
       // Si no hubo nada que embeber, un ping para dejar el modelo caliente
       // (keep_alive 30m) — evita cold-start en la 1ª búsqueda del usuario.
       if (!embedded) await this.embeddings.warm().catch(() => undefined);
+
+      // Categorización por contenido: etiqueta los artículos con su tema real
+      // (carpeta más cercana por significado), reusando los embeddings.
+      await this.categorization.tagPending().catch((e: Error) => this.logger.warn(`Categorización: ${e.message}`));
 
       return result;
     } finally {

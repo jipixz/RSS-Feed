@@ -13,6 +13,7 @@ export interface ArticleListItem {
   isRead: boolean;
   isStarred: boolean;
   readingMinutes: number | null;
+  topicKey: string | null; // tema por contenido (puede diferir de folderKey = fuente)
 }
 
 export interface DigestItem extends ArticleListItem {
@@ -132,6 +133,7 @@ export interface ListParams {
   folder?: string;
   unreadOnly?: boolean;
   saved?: boolean;
+  byTopic?: boolean;
   search?: string;
   cursor?: string;
   limit?: number;
@@ -143,6 +145,7 @@ export const api = {
     if (params.folder && params.folder !== 'all') q.set('folder', params.folder);
     if (params.unreadOnly) q.set('unreadOnly', 'true');
     if (params.saved) q.set('saved', 'true');
+    if (params.byTopic) q.set('byTopic', 'true');
     if (params.search?.trim()) q.set('search', params.search.trim());
     if (params.cursor) q.set('cursor', params.cursor);
     q.set('limit', String(params.limit ?? 30));

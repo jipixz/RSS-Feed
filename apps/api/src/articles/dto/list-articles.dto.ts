@@ -18,6 +18,12 @@ export class ListArticlesQueryDto {
   @IsBoolean()
   saved?: boolean;
 
+  // Ver la carpeta por CONTENIDO (topicKey) en vez de por fuente (feed.folder).
+  @IsOptional()
+  @Transform(toBool)
+  @IsBoolean()
+  byTopic?: boolean;
+
   @IsOptional()
   @IsString()
   @MaxLength(200)

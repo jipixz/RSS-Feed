@@ -62,6 +62,7 @@ export default function App() {
   const [saved, setSaved] = useState(false);
   const [digestMode, setDigestMode] = useState(false);
   const [unreadOnly, setUnreadOnly] = useState(false);
+  const [byTopic, setByTopic] = useState(false); // ver carpeta por contenido, no por fuente
   const [search, setSearch] = useState('');
   const [semantic, setSemantic] = useState(false); // búsqueda por significado
   const [semItems, setSemItems] = useState<ArticleListItem[] | null>(null);
@@ -160,8 +161,8 @@ export default function App() {
 
   // ── lista ─────────────────────────────────────────────────────────────────
   const listQuery = useMemo(
-    () => ({ folder, saved, unreadOnly, search: debouncedSearch }),
-    [folder, saved, unreadOnly, debouncedSearch],
+    () => ({ folder, saved, unreadOnly, byTopic, search: debouncedSearch }),
+    [folder, saved, unreadOnly, byTopic, debouncedSearch],
   );
 
   const loadList = useCallback(async (reset: boolean, cursor?: string) => {
@@ -725,12 +726,20 @@ export default function App() {
     </label>
   );
 
+  const folderLabel = (key: string) => folders.find((f) => f.key === key)?.label ?? key;
+
   const metaLine = (a: ArticleListItem) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, minWidth: 0 }}>
       <span style={{ color: a.dotColor, display: 'flex', flexShrink: 0 }}><IcCircle s={7} /></span>
       <span style={{ fontSize: 12, fontWeight: 600, color: t.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.source}</span>
       <span style={{ fontSize: 12, color: t.textMuted, whiteSpace: 'nowrap' }}>· {timeAgo(a.publishedAt)}</span>
       {a.readingMinutes && <span style={{ fontSize: 12, color: t.textMuted, whiteSpace: 'nowrap' }}>· {a.readingMinutes} min</span>}
+      {/* tema por CONTENIDO cuando difiere de la carpeta de la fuente */}
+      {a.topicKey && a.topicKey !== a.folderKey && (
+        <span title="Tema detectado por contenido (IA)" style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 3, background: t.tldrBg, color: t.tldrText, border: `1px solid ${t.tldrBorder}`, borderRadius: SN.radius.full, padding: '0 7px', fontSize: 10.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
+          <IcSpark s={9} /> {folderLabel(a.topicKey)}
+        </span>
+      )}
     </div>
   );
 
@@ -831,6 +840,14 @@ export default function App() {
           </div>
           {!phone && !digestMode && unreadToggle}
         </div>
+
+        {/* Ver la carpeta por CONTENIDO (tema detectado por IA) en vez de por fuente */}
+        {!digestMode && !saved && folder !== 'all' && (
+          <button onClick={() => setByTopic((v) => !v)} title="Agrupar por tema detectado, no por la fuente"
+            style={{ marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 5, height: 28, padding: '0 10px', borderRadius: SN.radius.full, border: `1px solid ${byTopic ? t.activeBar : t.border}`, background: byTopic ? t.activeBg : t.bg, color: byTopic ? t.activeText : t.textSecondary, fontFamily: SN.font.body, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+            <IcSpark s={12} /> {byTopic ? 'Por tema (contenido)' : 'Por fuente'}
+          </button>
+        )}
 
         {!phone && !digestMode && (
           <div style={{ marginTop: 10 }}>

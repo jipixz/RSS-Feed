@@ -19,6 +19,7 @@ const listSelect = {
   isStarred: true,
   imageUrl: true,
   wordCount: true,
+  topicKey: true, // tema por contenido (categorización semántica)
   feed: { select: { title: true, folder: { select: { key: true } } } },
 } satisfies Prisma.ArticleSelect;
 
@@ -43,6 +44,7 @@ export interface ArticleListItem {
   isRead: boolean;
   isStarred: boolean;
   readingMinutes: number | null;
+  topicKey: string | null; // tema por contenido (puede diferir de folderKey = fuente)
 }
 
 @Injectable()
@@ -107,7 +109,9 @@ export class ArticlesService {
     if (query.saved) {
       where.isStarred = true; // ESC-07: guardados sin importar carpeta
     } else if (query.folder) {
-      where.feed = { folder: { key: query.folder } };
+      // por tema: filtra por el contenido (topicKey); si no, por la fuente (carpeta del feed)
+      if (query.byTopic) where.topicKey = query.folder;
+      else where.feed = { folder: { key: query.folder } };
     }
     if (query.unreadOnly) where.isRead = false; // ESC-09
     if (query.search?.trim()) {
@@ -228,6 +232,7 @@ export class ArticlesService {
       isRead: row.isRead,
       isStarred: row.isStarred,
       readingMinutes: readingMinutes(row.wordCount),
+      topicKey: row.topicKey,
     };
   }
 }

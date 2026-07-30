@@ -134,3 +134,19 @@ interés "carros" aunque no diga la palabra.
   — nomic es diminuto (~50 ms por artículo en CPU) y así **no le quita nada de VRAM
   al LLM** de los TL;DR. gemma se queda dueña de la GPU. Si te sobra GPU y quieres
   aún más velocidad, sube `EMBED_NUM_GPU`.
+
+## Categorización por contenido (temas)
+
+Los mismos embeddings alimentan la clasificación por **tema real** (no por fuente):
+Señal calcula un *centroide* por carpeta (el promedio de los embeddings de sus
+artículos) y asigna a cada artículo la carpeta cuyo centroide es más cercano
+(`Article.topicKey`). Así un artículo de un feed "dev" que en realidad habla de
+seguridad se etiqueta como seguridad.
+
+- En la lista aparece un badge con el tema cuando **difiere de la fuente**.
+- El toggle **"Por tema"** en una carpeta la muestra por contenido (`?byTopic=true`)
+  en vez de por el feed de origen.
+- Corre en segundo plano en la ingesta (reusa los embeddings, no toca el LLM).
+- **Requisito de calidad**: cada carpeta necesita **≥5 artículos ya embebidos** para
+  formar un centroide fiable. Con pocas carpetas pobladas la clasificación es ruidosa;
+  mejora sola conforme entran más artículos.
