@@ -11,10 +11,11 @@ import { CategorizationService } from '../ai/categorization.service';
 
 const FEED_TIMEOUT_MS = 15_000; // § 3.4
 const FEED_CONCURRENCY = 5; // RP-2
-// Watchdog: un ciclo sano dura <2 min; si supera esto, algo se colgó (p. ej. la
-// PC del modelo dejó de responder a mitad de una llamada). Se aborta para que la
-// bandera `running` NO se quede atascada y los siguientes ciclos puedan correr.
-const MAX_CYCLE_MS = 10 * 60_000;
+// Watchdog: un ciclo sano dura <2 min, pero con muchos resúmenes/embeddings puede
+// tardar más de forma legítima, así que damos margen amplio (1 h). Si lo supera,
+// se asume colgado y se aborta para que la bandera `running` NO se quede atascada
+// y los siguientes ciclos puedan correr.
+const MAX_CYCLE_MS = 60 * 60_000;
 const FULL_CONTENT_MIN_CHARS = 600; // texto plano mínimo para considerar 'full'
 const EXCERPT_MAX_CHARS = 320;
 
