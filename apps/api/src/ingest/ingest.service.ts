@@ -11,6 +11,10 @@ import { CategorizationService } from '../ai/categorization.service';
 
 const FEED_TIMEOUT_MS = 15_000; // § 3.4
 const FEED_CONCURRENCY = 5; // RP-2
+// Watchdog: un ciclo sano dura <2 min; si supera esto, algo se colgó (p. ej. la
+// PC del modelo dejó de responder a mitad de una llamada). Se aborta para que la
+// bandera `running` NO se quede atascada y los siguientes ciclos puedan correr.
+const MAX_CYCLE_MS = 10 * 60_000;
 const FULL_CONTENT_MIN_CHARS = 600; // texto plano mínimo para considerar 'full'
 const EXCERPT_MAX_CHARS = 320;
 
@@ -49,6 +53,7 @@ export class IngestService {
     customFields: { item: ['content:encoded'] },
   });
   private running = false;
+  private runningSince = 0;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -61,49 +66,28 @@ export class IngestService {
 
   async ingestAll(): Promise<IngestResult> {
     if (this.running) {
-      this.logger.warn('Ingesta ya en curso — se omite este disparo');
-      return { feedsFetched: 0, newArticles: 0, summarized: 0, errors: 0 };
+      // Guard anti-cuelgue: si el ciclo "en curso" lleva demasiado tiempo, es que
+      // se colgó (nunca liberó la bandera). Forzamos continuar en vez de quedarnos
+      // atascados para siempre.
+      if (Date.now() - this.runningSince < MAX_CYCLE_MS) {
+        this.logger.warn('Ingesta ya en curso — se omite este disparo');
+        return { feedsFetched: 0, newArticles: 0, summarized: 0, errors: 0 };
+      }
+      this.logger.error('El ciclo anterior se colgó (lock viejo) — forzando reinicio de la ingesta');
     }
     this.running = true;
+    this.runningSince = Date.now();
     const startedAt = new Date();
     const result: IngestResult = { feedsFetched: 0, newArticles: 0, summarized: 0, errors: 0 };
     let tokensUsed = 0;
 
     try {
-      const feeds = await this.prisma.feed.findMany({ where: { active: true } });
-
-      // Concurrencia máx. 5 feeds (RP-2)
-      for (let i = 0; i < feeds.length; i += FEED_CONCURRENCY) {
-        const batch = feeds.slice(i, i + FEED_CONCURRENCY);
-        const outcomes = await Promise.allSettled(batch.map((feed) => this.ingestFeed(feed)));
-        for (const outcome of outcomes) {
-          if (outcome.status === 'fulfilled') {
-            result.feedsFetched += 1;
-            result.newArticles += outcome.value;
-          } else {
-            result.errors += 1;
-          }
-        }
-      }
-
-      // ESC-03: resumir pendientes respetando presupuesto (RN-05)
-      const ai = await this.summarizer.summarizePending();
-      result.summarized = ai.summarized;
-      tokensUsed = ai.tokensUsed;
-
-      // Relevancia semántica de "Hoy": embeddings en segundo plano (fuera del
-      // request del usuario). No bloquea nada: si falla, se reintenta el próximo ciclo.
-      const embedded = await this.embeddings
-        .embedPending()
-        .catch((e: Error) => (this.logger.warn(`Embeddings: ${e.message}`), 0));
-      // Si no hubo nada que embeber, un ping para dejar el modelo caliente
-      // (keep_alive 30m) — evita cold-start en la 1ª búsqueda del usuario.
-      if (!embedded) await this.embeddings.warm().catch(() => undefined);
-
-      // Categorización por contenido: etiqueta los artículos con su tema real
-      // (carpeta más cercana por significado), reusando los embeddings.
-      await this.categorization.tagPending().catch((e: Error) => this.logger.warn(`Categorización: ${e.message}`));
-
+      // Todo el ciclo corre bajo un timeout global: si algo (p. ej. una llamada al
+      // modelo) se cuelga sin resolver, se aborta y la bandera se libera igual.
+      tokensUsed = await this.withTimeout(this.runCycle(result), MAX_CYCLE_MS);
+      return result;
+    } catch (err) {
+      this.logger.error(`Ciclo de ingesta abortado: ${(err as Error).message}`);
       return result;
     } finally {
       this.running = false;
@@ -130,6 +114,53 @@ export class IngestService {
         }),
       );
     }
+  }
+
+  /** El trabajo real de un ciclo. Muta `result` y devuelve los tokens usados. */
+  private async runCycle(result: IngestResult): Promise<number> {
+    const feeds = await this.prisma.feed.findMany({ where: { active: true } });
+
+    // Concurrencia máx. 5 feeds (RP-2)
+    for (let i = 0; i < feeds.length; i += FEED_CONCURRENCY) {
+      const batch = feeds.slice(i, i + FEED_CONCURRENCY);
+      const outcomes = await Promise.allSettled(batch.map((feed) => this.ingestFeed(feed)));
+      for (const outcome of outcomes) {
+        if (outcome.status === 'fulfilled') {
+          result.feedsFetched += 1;
+          result.newArticles += outcome.value;
+        } else {
+          result.errors += 1;
+        }
+      }
+    }
+
+    // ESC-03: resumir pendientes respetando presupuesto (RN-05)
+    const ai = await this.summarizer.summarizePending();
+    result.summarized = ai.summarized;
+
+    // Relevancia semántica de "Hoy": embeddings en segundo plano. No bloquea nada.
+    const embedded = await this.embeddings
+      .embedPending()
+      .catch((e: Error) => (this.logger.warn(`Embeddings: ${e.message}`), 0));
+    // Si no hubo nada que embeber, un ping para dejar el modelo caliente (keep_alive).
+    if (!embedded) await this.embeddings.warm().catch(() => undefined);
+
+    // Categorización por contenido: etiqueta cada artículo con su tema real.
+    await this.categorization.tagPending().catch((e: Error) => this.logger.warn(`Categorización: ${e.message}`));
+
+    return ai.tokensUsed;
+  }
+
+  /** Aborta la promesa si excede `ms` — red de seguridad contra cuelgues. */
+  private withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+    return Promise.race([
+      p,
+      new Promise<never>((_, reject) => {
+        const h = setTimeout(() => reject(new Error(`el ciclo excedió ${ms} ms — abortado por el watchdog`)), ms);
+        // no evitar que el proceso termine por este timer
+        if (typeof h.unref === 'function') h.unref();
+      }),
+    ]);
   }
 
   /** Ingesta de un feed. Devuelve cuántos artículos nuevos guardó. */
