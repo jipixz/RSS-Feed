@@ -27,21 +27,10 @@ export class CategorizationService {
     if (!force && this.centroids && Date.now() - this.centroids.at < CENTROID_TTL_MS) {
       return this.centroids.map;
     }
-    const rows = await this.prisma.article.findMany({
-      where: { embedding: { not: null } },
-      select: { embedding: true, feed: { select: { folder: { select: { key: true } } } } },
-    });
-
+    // Por lotes: solo se retiene una suma por carpeta, nunca todos los vectores
+    // (cargarlos todos de golpe reventaba el heap de 512 MB de la Pi).
     const acc = new Map<string, { sum: number[]; n: number }>();
-    for (const r of rows) {
-      if (!r.embedding) continue;
-      let v: number[];
-      try {
-        v = JSON.parse(r.embedding) as number[];
-      } catch {
-        continue;
-      }
-      const key = r.feed.folder.key;
+    await this.embeddings.forEachEmbedding((_id, v, key) => {
       const cur = acc.get(key);
       if (!cur) {
         acc.set(key, { sum: [...v], n: 1 });
@@ -49,7 +38,7 @@ export class CategorizationService {
         for (let i = 0; i < v.length; i++) cur.sum[i] += v[i];
         cur.n += 1;
       }
-    }
+    });
 
     const map = new Map<string, number[]>();
     for (const [key, { sum, n }] of acc) {
@@ -76,14 +65,18 @@ export class CategorizationService {
    */
   async tagPending(limit = 300): Promise<number> {
     if (!this.embeddings.isEnabled()) return 0;
-    const centroids = await this.getCentroids();
-    if (centroids.size < 2) return 0; // se necesitan ≥2 temas para clasificar
 
+    // Primero ver si hay algo que etiquetar: si no, ni recorremos la tabla para
+    // calcular centroides (ahorra un escaneo completo en cada ciclo de 30 min).
     const rows = await this.prisma.article.findMany({
       where: { embedding: { not: null }, topicKey: null },
       take: limit,
       select: { id: true, embedding: true },
     });
+    if (rows.length === 0) return 0;
+
+    const centroids = await this.getCentroids();
+    if (centroids.size < 2) return 0; // se necesitan ≥2 temas para clasificar
     let n = 0;
     for (const r of rows) {
       if (!r.embedding) continue;

@@ -43,3 +43,56 @@ describe('EmbeddingService (degradación sin Ollama)', () => {
     expect(svc.isEnabled()).toBe(true);
   });
 });
+
+// 3) Regresión del OOM en la Pi: antes se cargaban TODOS los embeddings de golpe
+//    y reventaba el heap. Ahora se recorren por lotes con cursor.
+describe('EmbeddingService por lotes (regresión OOM)', () => {
+  const fakeConfig = { get: (k: string) => (k === 'AI_PROVIDER' ? 'ollama' : undefined) };
+
+  // BD falsa en memoria que imita la paginación por cursor de Prisma.
+  const makePrisma = (rows: { id: string; vec: number[]; folder: string }[]) => {
+    const pageSizes: number[] = [];
+    const findMany = jest.fn(async (args: { take: number; cursor?: { id: string }; skip?: number }) => {
+      const sorted = [...rows].sort((a, b) => a.id.localeCompare(b.id));
+      const start = args.cursor ? sorted.findIndex((r) => r.id === args.cursor!.id) + (args.skip ?? 0) : 0;
+      const page = sorted.slice(start, start + args.take).map((r) => ({
+        id: r.id,
+        embedding: JSON.stringify(r.vec),
+        feed: { folder: { key: r.folder } },
+      }));
+      pageSizes.push(page.length);
+      return page;
+    });
+    return { prisma: { article: { findMany } }, pageSizes, findMany };
+  };
+
+  const rows = [
+    { id: 'a', vec: [1, 0], folder: 'dev' },
+    { id: 'b', vec: [0, 1], folder: 'sec' },
+    { id: 'c', vec: [0.9, 0.1], folder: 'dev' },
+    { id: 'd', vec: [0.1, 0.9], folder: 'sec' },
+    { id: 'e', vec: [0.7, 0.7], folder: 'ai' },
+  ];
+
+  it('forEachEmbedding visita todas las filas sin pedir más de un lote por consulta', async () => {
+    const { prisma, pageSizes, findMany } = makePrisma(rows);
+    const svc = new EmbeddingService(fakeConfig as never, prisma as never);
+    const seen: string[] = [];
+
+    await svc.forEachEmbedding((id) => { seen.push(id); }, 2); // lotes de 2
+
+    expect(seen.sort()).toEqual(['a', 'b', 'c', 'd', 'e']); // no se salta ninguna
+    expect(Math.max(...pageSizes)).toBeLessThanOrEqual(2); // nunca carga todo de golpe
+    expect(findMany).toHaveBeenCalledTimes(3); // 2 + 2 + 1
+  });
+
+  it('rank devuelve el top-K por similitud y respeta excludeId', async () => {
+    const { prisma } = makePrisma(rows);
+    const svc = new EmbeddingService(fakeConfig as never, prisma as never);
+
+    const top = await svc.rank([1, 0], { limit: 2, excludeId: 'a' });
+
+    // 'a' excluido; lo más cercano a [1,0] es 'c' y luego 'e'
+    expect(top.map((t) => t.id)).toEqual(['c', 'e']);
+  });
+});

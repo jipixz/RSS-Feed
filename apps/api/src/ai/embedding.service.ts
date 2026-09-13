@@ -108,23 +108,54 @@ export class EmbeddingService {
    * consulta. Base de la búsqueda semántica y de "artículos relacionados".
    */
   async rank(query: number[], opts: { limit: number; excludeId?: string }): Promise<{ id: string; score: number }[]> {
-    const rows = await this.prisma.article.findMany({
-      where: { embedding: { not: null } },
-      select: { id: true, embedding: true },
-    });
-    const scored: { id: string; score: number }[] = [];
-    for (const r of rows) {
-      if (r.id === opts.excludeId || !r.embedding) continue;
-      let v: number[];
-      try {
-        v = JSON.parse(r.embedding) as number[];
-      } catch {
-        continue;
+    // Top-K acotado: nunca guarda más de `limit` resultados ni todos los vectores.
+    const top: { id: string; score: number }[] = [];
+    await this.forEachEmbedding(async (id, v) => {
+      if (id === opts.excludeId) return;
+      const score = EmbeddingService.cosine(query, v);
+      if (top.length < opts.limit) {
+        top.push({ id, score });
+        top.sort((a, b) => b.score - a.score);
+      } else if (score > top[top.length - 1].score) {
+        top[top.length - 1] = { id, score };
+        top.sort((a, b) => b.score - a.score);
       }
-      scored.push({ id: r.id, score: EmbeddingService.cosine(query, v) });
+    });
+    return top;
+  }
+
+  /**
+   * Recorre TODOS los artículos con embedding en lotes (paginación por cursor),
+   * parseando un lote a la vez. Evita cargar miles de vectores de golpe — eso
+   * reventaba el heap de 512 MB en la Pi al crecer la BD (OOM en cada ciclo).
+   */
+  async forEachEmbedding(
+    fn: (id: string, vector: number[], folderKey: string) => void | Promise<void>,
+    batchSize = 400,
+  ): Promise<void> {
+    let cursor: string | undefined;
+    for (;;) {
+      const batch = await this.prisma.article.findMany({
+        where: { embedding: { not: null } },
+        select: { id: true, embedding: true, feed: { select: { folder: { select: { key: true } } } } },
+        orderBy: { id: 'asc' },
+        take: batchSize,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      });
+      if (batch.length === 0) break;
+      for (const r of batch) {
+        if (!r.embedding) continue;
+        let v: number[];
+        try {
+          v = JSON.parse(r.embedding) as number[];
+        } catch {
+          continue;
+        }
+        await fn(r.id, v, r.feed.folder.key);
+      }
+      cursor = batch[batch.length - 1].id;
+      if (batch.length < batchSize) break;
     }
-    scored.sort((a, b) => b.score - a.score);
-    return scored.slice(0, opts.limit);
   }
 
   /** Ping barato para mantener el modelo cargado (keep_alive) entre ciclos de
