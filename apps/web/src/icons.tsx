@@ -59,6 +59,8 @@ export const IcPause = (p: IconProps) => (<svg {...I(p)} fill="currentColor" str
 export const IcNext = (p: IconProps) => (<svg {...I(p)} fill="currentColor" stroke="none"><path d="M5 4l10 8-10 8z"/><rect x="17" y="4" width="3" height="16" rx="1"/></svg>);
 export const IcPrev = (p: IconProps) => (<svg {...I(p)} fill="currentColor" stroke="none"><path d="M19 4L9 12l10 8z"/><rect x="4" y="4" width="3" height="16" rx="1"/></svg>);
 export const IcList = (p: IconProps) => (<svg {...I(p)}><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>);
+export const IcBell = (p: IconProps) => (<svg {...I(p)}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>);
+export const IcAlert = (p: IconProps) => (<svg {...I(p)}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>);
 export const IcPlusCircle = (p: IconProps) => (<svg {...I(p)}><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>);
 export const IcSend = (p: IconProps) => (<svg {...I(p)}><path d="m22 2-7 20-4-9-9-4 20-7z"/><path d="M22 2 11 13"/></svg>);
 export const IcVolume = (p: IconProps) => (<svg {...I(p)}><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>);

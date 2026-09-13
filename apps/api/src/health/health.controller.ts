@@ -1,6 +1,7 @@
 import { Controller, Get, ServiceUnavailableException } from '@nestjs/common';
 import { execSync } from 'child_process';
 import { PrismaService } from '../prisma/prisma.service';
+import { AlertsService } from './alerts.service';
 
 // commit desplegado, resuelto una vez al arrancar (el repo vive dos niveles arriba)
 const VERSION = (() => {
@@ -13,7 +14,16 @@ const VERSION = (() => {
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly alerts: AlertsService,
+  ) {}
+
+  /** Avisos de salud para la app: fuentes caídas e ingesta parada. */
+  @Get('alerts')
+  listAlerts() {
+    return this.alerts.list();
+  }
 
   /** FE-05: si la BD no responde → 503. Incluye el commit desplegado. */
   @Get()

@@ -68,6 +68,18 @@ export interface VoiceOption {
   label: string;
 }
 
+export interface HealthAlert {
+  id: string;
+  fingerprint: string;
+  kind: 'feed_failing' | 'ingest_stale';
+  level: 'warn' | 'error';
+  title: string;
+  detail: string;
+  dismissible: boolean;
+  feedId?: string;
+  since?: string;
+}
+
 export interface ChatTurn {
   role: 'user' | 'assistant';
   content: string;
@@ -220,6 +232,9 @@ export const api = {
   },
   health(): Promise<{ status: 'ok'; version: string }> {
     return request('/api/health');
+  },
+  healthAlerts(): Promise<HealthAlert[]> {
+    return request('/api/health/alerts');
   },
   ttsVoices(): Promise<{ piper: VoiceOption[]; kokoro: VoiceOption[] }> {
     return request('/api/tts/voices');

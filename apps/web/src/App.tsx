@@ -2,10 +2,11 @@ import { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from
 import DOMPurify from 'dompurify';
 import { SN, THEMES, THEME_LABELS, ThemeKey, applyAccent } from './tokens';
 import {
-  IcActivity, IcBack, IcChat, IcCheck, IcCircle, IcCode, IcCpu, IcDb, IcExt, IcFilter, IcGear, IcInbox,
+  IcActivity, IcAlert, IcBack, IcBell, IcChat, IcCheck, IcCircle, IcCode, IcCpu, IcDb, IcExt, IcFilter, IcGear, IcInbox,
   IcPalette, IcPlay, IcPlus, IcRefresh, IcSearch, IcShield, IcSpark, IcStar, IcStarF, IcTag, IcType, IcX, LogoMark,
 } from './icons';
-import { api, ArticleDetail, ArticleListItem, DigestItem, FeedInfo, Folder, timeAgo } from './api';
+import { api, ArticleDetail, ArticleListItem, DigestItem, FeedInfo, Folder, HealthAlert, timeAgo } from './api';
+import { AlertsPanel, loadDismissed, visibleAlerts } from './AlertsPanel';
 import { SettingsModal } from './SettingsModal';
 import { DiscoverModal } from './DiscoverModal';
 import { LiveConsole } from './LiveConsole';
@@ -94,6 +95,9 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showConsole, setShowConsole] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [showAlerts, setShowAlerts] = useState(false);
+  const [alerts, setAlerts] = useState<HealthAlert[]>([]);
+  const [dismissedAlerts, setDismissedAlerts] = useState<Set<string>>(loadDismissed);
   const [showDiscover, setShowDiscover] = useState(false);
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -114,7 +118,7 @@ export default function App() {
   const [readProgress, setReadProgress] = useState(0);
   const [backToast, setBackToast] = useState(false);
   const exitArmed = useRef(false);
-  const uiRef = useRef({ selectedId: null as string | null, sheetOpen: false, showSettings: false, showConsole: false, showDiscover: false, showChat: false });
+  const uiRef = useRef({ selectedId: null as string | null, sheetOpen: false, showSettings: false, showConsole: false, showDiscover: false, showChat: false, showAlerts: false });
 
   // ── carga inicial ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -124,6 +128,34 @@ export default function App() {
     void refreshFolders();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── avisos de salud (fuentes caídas / ingesta parada) ─────────────────────
+  const loadAlerts = useCallback(() => {
+    api.healthAlerts().then(setAlerts).catch(() => undefined); // sin red: se reintenta luego
+  }, []);
+
+  useEffect(() => {
+    loadAlerts();
+    const every = setInterval(loadAlerts, 5 * 60_000);
+    // al volver a abrir la PWA (sale de segundo plano) se revisa al momento
+    const onVisible = () => { if (document.visibilityState === 'visible') loadAlerts(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => { clearInterval(every); document.removeEventListener('visibilitychange', onVisible); };
+  }, [loadAlerts]);
+
+  const shownAlerts = useMemo(() => visibleAlerts(alerts, dismissedAlerts), [alerts, dismissedAlerts]);
+  const criticalAlert = shownAlerts.find((a) => a.level === 'error') ?? null;
+
+  // Globito con el número de avisos en el ícono de la app instalada (Badging API).
+  useEffect(() => {
+    const nav = navigator as Navigator & { setAppBadge?: (n: number) => Promise<void>; clearAppBadge?: () => Promise<void> };
+    try {
+      if (shownAlerts.length) void nav.setAppBadge?.(shownAlerts.length).catch(() => undefined);
+      else void nav.clearAppBadge?.().catch(() => undefined);
+    } catch {
+      /* navegador sin soporte: no pasa nada */
+    }
+  }, [shownAlerts.length]);
 
   // PWA: capturar el evento de instalación para ofrecer un botón "Instalar app"
   useEffect(() => {
@@ -255,8 +287,8 @@ export default function App() {
 
   // ── botón "atrás" del teléfono ────────────────────────────────────────────
   useEffect(() => {
-    uiRef.current = { selectedId, sheetOpen, showSettings, showConsole, showDiscover, showChat };
-  }, [selectedId, sheetOpen, showSettings, showConsole, showDiscover, showChat]);
+    uiRef.current = { selectedId, sheetOpen, showSettings, showConsole, showDiscover, showChat, showAlerts };
+  }, [selectedId, sheetOpen, showSettings, showConsole, showDiscover, showChat, showAlerts]);
 
   // El "atrás" cierra lo que esté abierto (artículo/paneles) en vez de salir de
   // la app; en la raíz, pide confirmación y sale al segundo "atrás".
@@ -266,6 +298,7 @@ export default function App() {
     const onPop = () => {
       const ui = uiRef.current;
       if (ui.showDiscover) { setShowDiscover(false); exitArmed.current = false; reguard(); return; }
+      if (ui.showAlerts) { setShowAlerts(false); exitArmed.current = false; reguard(); return; }
       if (ui.showChat) { setShowChat(false); exitArmed.current = false; reguard(); return; }
       if (ui.showConsole) { setShowConsole(false); exitArmed.current = false; reguard(); return; }
       if (ui.showSettings) { setShowSettings(false); exitArmed.current = false; reguard(); return; }
@@ -585,6 +618,15 @@ export default function App() {
         {!phone && (
           <button className="sn-iconbtn" style={ghostBtn} onClick={() => void markAllRead()} title="Marcar todo leído">
             <IcCheck s={15} />Marcar todo leído
+          </button>
+        )}
+        {shownAlerts.length > 0 && (
+          <button className="sn-iconbtn" style={{ ...iconBtn, position: 'relative', color: criticalAlert ? '#ff5470' : '#f59e0b' }} onClick={() => setShowAlerts(true)}
+            title={`${shownAlerts.length} ${shownAlerts.length === 1 ? 'aviso' : 'avisos'}`}>
+            <IcBell s={17} />
+            <span style={{ position: 'absolute', top: -5, right: -5, minWidth: 17, height: 17, padding: '0 4px', borderRadius: 9, background: criticalAlert ? '#ff5470' : '#f59e0b', color: '#fff', fontSize: 10.5, fontWeight: 800, display: 'grid', placeItems: 'center', fontFamily: SN.font.body, lineHeight: 1 }}>
+              {shownAlerts.length}
+            </span>
           </button>
         )}
         <button className="sn-iconbtn" style={iconBtn} onClick={() => setShowChat(true)} title="Minichat con la IA"><IcChat s={17} /></button>
@@ -1108,6 +1150,15 @@ export default function App() {
       <div style={{ '--hover': t.hover, '--surf3': t.surface3, '--sb': t.sb, fontFamily: SN.font.body, background: t.appBg, height: '100dvh', display: 'flex', flexDirection: 'column', overflow: 'hidden' } as CSSProperties}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: t.bg, minHeight: 0 }}>
           {header}
+          {/* banner para lo crítico (ingesta parada): imposible de pasar por alto */}
+          {criticalAlert && (
+            <button onClick={() => setShowAlerts(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', padding: '8px 14px', border: 'none', borderBottom: '1px solid rgba(255,84,112,0.35)', background: 'rgba(255,84,112,0.12)', color: '#ff5470', cursor: 'pointer', textAlign: 'left', fontFamily: SN.font.body, fontSize: 12.5, fontWeight: 600, flexShrink: 0 }}>
+              <span style={{ display: 'flex', flexShrink: 0 }}><IcAlert s={15} /></span>
+              <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{criticalAlert.title}</span>
+              <span style={{ flexShrink: 0, textDecoration: 'underline' }}>Ver</span>
+            </button>
+          )}
           {chips}
           <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
             {sidebar}
@@ -1156,6 +1207,12 @@ export default function App() {
 
       {showConsole && <LiveConsole t={t} phone={phone} onClose={() => setShowConsole(false)} />}
       {showChat && <ChatSheet t={t} phone={phone} onClose={() => setShowChat(false)} />}
+      {showAlerts && (
+        <AlertsPanel t={t} phone={phone} alerts={alerts} dismissed={dismissedAlerts}
+          onDismissedChange={setDismissedAlerts}
+          onChanged={() => { loadAlerts(); void refreshFeeds(); void refreshFolders(); }}
+          onClose={() => setShowAlerts(false)} />
+      )}
       <AudioQueue ref={audioQueueRef} t={t} phone={phone} />
 
       {showDiscover && (
