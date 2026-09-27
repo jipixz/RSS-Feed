@@ -6,7 +6,7 @@ Lector RSS personal (single-user) que **trae el cuerpo completo de los artículo
 - **Frontend:** React + Vite (SPA estática servida por el mismo NestJS en `:3001`), instalable como PWA
 - **IA:** conmutable por env — `ollama` (local, otra máquina de tu red) · `anthropic` (Claude en la nube) · `none`
 - **Audiolibro:** TTS dual — Piper (local) y Kokoro (calidad, con GPU) — + minichat con el modelo
-- **Spec:** ver `files (1)/SPEC.md` (fuente de verdad del comportamiento)
+- **Spec:** ver [`docs/SPEC.md`](docs/SPEC.md) (spec original del proyecto)
 
 ## Documentación
 
@@ -187,4 +187,4 @@ En `.env`: `AI_PROVIDER=anthropic` + `ANTHROPIC_API_KEY=sk-ant-...` y reinicia. 
 
 ## API
 
-Base `/api` — endpoints principales: `GET /articles` (cursor, filtros `folder/unreadOnly/saved/search`), `GET /articles/:id`, `PATCH /articles/:id/read|star`, `POST /articles/mark-all-read`, `GET /folders`, `GET|POST|DELETE /feeds`, `GET|POST|DELETE /mutes`, `GET|PATCH /prefs`, `POST /ingest`, `GET /health`. Contrato completo en `files (1)/SPEC.md` § 3.
+Base `/api` — endpoints principales: `GET /articles` (cursor, filtros `folder/unreadOnly/saved/search`), `GET /articles/:id`, `PATCH /articles/:id/read|star`, `POST /articles/mark-all-read`, `GET /folders`, `GET|POST|DELETE /feeds`, `GET|POST|DELETE /mutes`, `GET|PATCH /prefs`, `POST /ingest`, `GET /health`. Contrato completo en [`docs/SPEC.md`](docs/SPEC.md) § 3.

@@ -3,6 +3,5 @@ node_modules
 **/dist
 data
 .env
-files (1)
 *.log
 .git
