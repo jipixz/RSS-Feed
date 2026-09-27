@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="apps/web/public/icons/icon-192.png" width="96" alt="Señal logo" />
+<img src="docs/logo.svg" width="96" alt="Señal logo" />
 
 # Señal
 
@@ -31,9 +31,13 @@ Built to run on a Raspberry Pi 4B with a local LLM, and just as happy on a VPS, 
 
 ## Screenshots
 
-| "Today", ranked by meaning | Live AI console | Folders, search and muted words |
+| "Today", ranked by meaning | Full article with its TL;DR | Audiobook: Kokoro or Piper |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/today.png" width="250" alt="Today view with AI TL;DRs" /> | <img src="docs/screenshots/ai-console.png" width="250" alt="Live AI console streaming each summary" /> | <img src="docs/screenshots/folders.png" width="250" alt="Folders, semantic search and noise filters" /> |
+| <img src="docs/screenshots/today.png" width="250" alt="Today view with AI TL;DRs" /> | <img src="docs/screenshots/article.png" width="250" alt="Full article in the app with the AI TL;DR on top" /> | <img src="docs/screenshots/audiobook.png" width="250" alt="Listen menu with Kokoro and Piper voices" /> |
+
+| Live AI console | Folders, search and muted words |
+|:---:|:---:|
+| <img src="docs/screenshots/ai-console.png" width="250" alt="Live AI console streaming each summary" /> | <img src="docs/screenshots/folders.png" width="250" alt="Folders, semantic search and noise filters" /> |
 
 <details>
 <summary><b>Five themes</b> and the interest profile that ranks "Today"</summary>
