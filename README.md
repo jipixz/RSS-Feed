@@ -31,15 +31,22 @@ Built to run on a Raspberry Pi 4B with a local LLM, and just as happy on a VPS, 
 
 ## Screenshots
 
-<!-- Drop your screenshots in docs/screenshots/ with these names and uncomment the table.
-
-| Today | Article with TL;DR | Mobile |
+| "Today", ranked by meaning | Live AI console | Folders, search and muted words |
 |:---:|:---:|:---:|
-| ![Today](docs/screenshots/today.png) | ![Article](docs/screenshots/article.png) | ![Mobile](docs/screenshots/mobile.png) |
+| <img src="docs/screenshots/today.png" width="250" alt="Today view with AI TL;DRs" /> | <img src="docs/screenshots/ai-console.png" width="250" alt="Live AI console streaming each summary" /> | <img src="docs/screenshots/folders.png" width="250" alt="Folders, semantic search and noise filters" /> |
 
--->
+<details>
+<summary><b>Five themes</b> and the interest profile that ranks "Today"</summary>
 
-*Screenshots coming soon.*
+<br/>
+
+| Light | Sepia | Café | Dark | Black |
+|:---:|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/theme-light.png" width="150" alt="Light theme" /> | <img src="docs/screenshots/theme-sepia.png" width="150" alt="Sepia theme" /> | <img src="docs/screenshots/theme-cafe.png" width="150" alt="Café theme" /> | <img src="docs/screenshots/theme-dark.png" width="150" alt="Dark theme" /> | <img src="docs/screenshots/theme-black.png" width="150" alt="Black theme" /> |
+
+<img src="docs/screenshots/interests.png" width="250" alt="Interest profile settings" />
+
+</details>
 
 ---
 
