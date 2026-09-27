@@ -1,0 +1,194 @@
+# Señal — lector RSS con contenido completo y TL;DR IA
+
+[![CI](https://github.com/jipixz/RSS-Feed/actions/workflows/ci.yml/badge.svg)](https://github.com/jipixz/RSS-Feed/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+
+*[Read in English](README.md)* · [Changelog](CHANGELOG.md)
+
+Lector RSS personal (single-user) que **trae el cuerpo completo de los artículos dentro de la app** (no te manda al sitio web), filtra ruido por palabras silenciadas y genera un TL;DR de 1–2 frases en español con IA. Nació para una **Raspberry Pi 4B**, pero corre en cualquier lado con Node (VPS, mini-PC, Docker, tu escritorio).
+
+- **Backend:** NestJS + Prisma + SQLite (un solo archivo de BD en `data/senal.db`)
+- **Frontend:** React + Vite (SPA estática servida por el mismo NestJS en `:3001`), instalable como PWA
+- **IA:** conmutable por env — `ollama` (local, otra máquina de tu red) · `anthropic` (Claude en la nube) · `none`
+- **Audiolibro:** TTS dual — Piper (local) y Kokoro (calidad, con GPU) — + minichat con el modelo
+- **Spec:** ver [`docs/SPEC.md`](docs/SPEC.md) (spec original del proyecto)
+
+## Documentación
+
+Este proyecto está pensado para **adaptarse a tu setup** — no estás atado a una Pi,
+a Ollama ni a Cloudflare. Guías:
+
+- **[Proveedores de IA](docs/proveedores-ia.md)** — IA local (Ollama), en la nube (Claude/OpenAI/otros) o sin IA; modos de conexión.
+- **[Hosting](docs/hosting.md)** — dónde montarlo: Pi, VPS/Linux, Docker, Windows/Mac; backups.
+- **[Autenticación](docs/autenticacion.md)** — solo LAN, VPN (Tailscale), Cloudflare Access, o **login local + MFA** con reverse proxy (Caddy/Authelia).
+- **[Personalización](docs/personalizacion.md)** — temas, color de acento, ancho y tamaño de texto, tipografía, feeds, prompts.
+
+## Desarrollo (Windows/Mac/Linux)
+
+```bash
+pnpm install
+cp .env.example .env             # ajusta OLLAMA_BASE_URL a la IP de tu PC con Ollama
+pnpm prisma:migrate              # crea data/senal.db + seed de 16 feeds
+pnpm --filter api dev            # API + frontend build en http://localhost:3001
+pnpm --filter web dev            # (opcional) Vite dev server con HMR en :5173
+```
+
+Disparar ingesta manual: `POST http://localhost:3001/api/ingest` (o botón "Actualizar" en la UI).
+
+## Deploy en la Raspberry Pi 4B (pm2 — recomendado)
+
+Sin overhead de Docker (~100 MB menos de RAM). Requisitos en la Pi: Node 22 LTS,
+pnpm (`corepack enable`) y pm2 (`npm i -g pm2`).
+
+```bash
+# 1. Clona el repo
+git clone https://github.com/jipixz/RSS-Feed.git senal && cd senal
+
+# 2. Configura el entorno
+cp .env.example .env
+nano .env        # OLLAMA_BASE_URL=http://<IP-de-tu-PC>:11434, modelo, etc.
+
+# 3. Instala, compila y aplica migraciones
+pnpm install
+pnpm build                 # web (Vite) + api (Nest)
+pnpm prisma:deploy         # crea/actualiza data/senal.db (el seed corre solo al arrancar)
+
+# 4. Arranca con pm2
+pm2 start ecosystem.config.js
+pm2 save                   # sobrevive reinicios (con pm2 startup configurado)
+
+# 5. Listo — http://<IP-de-la-Pi>:3001 (o tu Cloudflare Tunnel apuntando a ese puerto)
+```
+
+Actualizar a una versión nueva (el script `actualizar` instala deps, aplica
+migraciones de BD y compila regenerando el cliente Prisma):
+
+```bash
+git pull && pnpm actualizar && pm2 restart senal
+```
+
+> Ojo: el script NO puede llamarse `update` porque `pnpm update` es un comando
+> nativo de pnpm (actualiza dependencias) y le gana al script. `pnpm build` ya
+> regenera el cliente Prisma y `pnpm actualizar` aplica las migraciones antes de
+> compilar — así un cambio de esquema nunca rompe el build.
+>
+> Verifica qué versión quedó desplegada en **Ajustes → hasta abajo** (commit de
+> web y api) o con `curl -s localhost:3001/api/health`.
+
+Consumo esperado en la Pi: ~100–150 MB en reposo, picos de 300–450 MB durante la
+ingesta (acotado por `--max-old-space-size=512` en `ecosystem.config.js`).
+
+> Si lo expones por Cloudflare Tunnel + Zero Trust, el acceso ya queda autenticado.
+> Para una capa extra puedes definir `API_KEY` en `.env` (los writes exigirán el
+> header `X-API-Key`; nota: la UI aún no manda ese header).
+
+## Deploy en la Raspberry Pi 4B (Docker, alternativa)
+
+Requisitos en la Pi: Raspberry Pi OS de 64 bits + Docker + plugin compose
+(`curl -fsSL https://get.docker.com | sh`).
+
+```bash
+# 1. Clona el repo
+git clone https://github.com/jipixz/RSS-Feed.git senal && cd senal
+
+# 2. Configura el entorno
+cp .env.example .env
+nano .env        # OLLAMA_BASE_URL=http://<IP-de-tu-PC>:11434, modelo, etc.
+
+# 3. Construye y levanta (el primer build tarda ~10-15 min en la Pi)
+docker compose up -d --build
+
+# 4. Listo — abre http://<IP-de-la-Pi>:3001
+```
+
+- La BD queda en `./data/senal.db` (volumen). Haz backup copiando ese archivo.
+- Migraciones se aplican solas al arrancar; el seed corre solo si la BD está vacía.
+- La ingesta corre cada 30 min (`INGEST_CRON`); la purga de artículos viejos, diario a las 03:30.
+- Actualizar: `git pull && docker compose up -d --build`.
+- Logs: `docker compose logs -f senal`.
+
+### Ollama en tu PC (para los TL;DR)
+
+En la máquina donde corre Ollama, permite conexiones desde la red:
+
+```bash
+# Windows (PowerShell): variable de entorno + reiniciar la app de Ollama
+setx OLLAMA_HOST 0.0.0.0
+```
+
+Usa en `OLLAMA_MODEL` un modelo que ya tengas (`ollama list`); para resúmenes en
+español funcionan bien `qwen2.5-coder:7b` (ligero) o `gemma4:latest` (mejor prosa,
+necesita ~7 GB de RAM libre). En el `.env` de la Pi, `OLLAMA_BASE_URL` es la IP
+LAN de la PC con Ollama, p. ej. `http://192.168.1.50:11434`.
+
+Si la PC con Ollama está apagada, **la app funciona igual**: los artículos se leen sin TL;DR y los resúmenes pendientes se generan cuando vuelva a estar disponible (FE-03).
+
+### Audiolibro (TTS) — opcional
+
+Dos motores intercambiables desde la app (🎧 en el artículo):
+
+**Piper (rápido — corre en la Pi, funciona sin la PC):**
+```bash
+# en la Pi
+pip install piper-tts
+sudo apt install -y ffmpeg          # comprime el audio a mp3
+mkdir -p ~/RSS/senal/data/tts-voices && cd ~/RSS/senal/data/tts-voices
+# voces recomendadas (puedes bajar varias; todas aparecen en el selector de la app)
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx.json
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/hfc_female/medium/en_US-hfc_female-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/hfc_female/medium/en_US-hfc_female-medium.onnx.json
+```
+En el `.env` de la Pi: `TTS_PIPER_BIN=piper` (o la ruta completa si pip lo dejó
+fuera del PATH: `~/.local/bin/piper`) y `TTS_PIPER_VOICE=<ruta al .onnx>` (voz
+por default). Todas las `.onnx` de esa carpeta salen en el selector de voz de la
+app; si las guardas en otro lado, apunta `TTS_PIPER_VOICES_DIR` a esa carpeta.
+
+**Kokoro (calidad — corre en la PC):**
+
+Sin Docker (nativo con Python, incluye servidor propio en `tools/`):
+```bash
+# en la PC
+pip install kokoro soundfile flask
+python tools/kokoro-server.py           # escucha en 0.0.0.0:8880
+```
+La primera petición descarga los pesos (~330 MB). Para que arranque con Windows:
+`Win+R → shell:startup` y pega un acceso directo a `tools/kokoro-server.bat`.
+
+El server elige el idioma por el prefijo de la voz: `ef_dora`, `em_alex` y
+`em_santa` hablan **español** (usadas por el minichat); `af_*`/`am_*`/`bf_*`/`bm_*`
+son inglés US/UK (mejores para los artículos).
+
+Con Docker (alternativa): `docker run -d --restart unless-stopped -p 8880:8880 ghcr.io/remsky/kokoro-fastapi-cpu:latest`
+
+En el `.env` de la Pi: `TTS_KOKORO_URL=http://<IP-de-la-PC>:8880`.
+
+**Acelerar Kokoro con GPU (NVIDIA):** el cuello de botella es cómputo, no RAM.
+Con una GPU la síntesis baja de ~100 s a ~10-20 s por artículo:
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cu121   # ~2.5 GB
+set KOKORO_DEVICE=cuda   # antes de arrancar tools/kokoro-server.py
+```
+
+El audio se genera una vez por artículo+motor+voz y queda cacheado en `data/audio/`.
+
+### Cambiar a Claude (opcional)
+
+En `.env`: `AI_PROVIDER=anthropic` + `ANTHROPIC_API_KEY=sk-ant-...` y reinicia. Usa `claude-haiku-4-5` con presupuesto de `AI_DAILY_BUDGET` resúmenes/día (~$1–3 USD/mes con 60/día).
+
+## Variables de entorno
+
+| Variable | Default | Qué hace |
+|---|---|---|
+| `DATABASE_URL` | `file:../data/senal.db` | SQLite (relativa a `prisma/`) |
+| `AI_PROVIDER` | `ollama` | `ollama` · `anthropic` · `none` |
+| `OLLAMA_BASE_URL` | — | URL de Ollama en tu red |
+| `OLLAMA_MODEL` | `llama3.2:3b` | Modelo para los TL;DR |
+| `ANTHROPIC_API_KEY` | — | Solo si `AI_PROVIDER=anthropic` |
+| `INGEST_CRON` | `0 */30 * * * *` | Cron de 6 campos (cada 30 min) |
+| `AI_DAILY_BUDGET` | `60` | Máx. resúmenes IA por día (RN-05) |
+| `RETENTION_DAYS` | `30` | Purga de leídos no guardados (RN-06) |
+| `API_KEY` | vacío | Si se define, los writes exigen header `X-API-Key` (RS-2) |
+
+## API
+
+Base `/api` — endpoints principales: `GET /articles` (cursor, filtros `folder/unreadOnly/saved/search`), `GET /articles/:id`, `PATCH /articles/:id/read|star`, `POST /articles/mark-all-read`, `GET /folders`, `GET|POST|DELETE /feeds`, `GET|POST|DELETE /mutes`, `GET|PATCH /prefs`, `POST /ingest`, `GET /health`. Contrato completo en [`docs/SPEC.md`](docs/SPEC.md) § 3.
