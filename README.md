@@ -105,10 +105,14 @@ A few problems worth reading about in the commit history:
   keeping a bounded top-K, with regression tests for both.
 - **Ingestion that hung forever.** A `running` flag could stay stuck after a hung model call. Fixed with a
   global watchdog (`Promise.race` timeout) plus a stale-lock guard, so the flag is always released.
-- **Embeddings without stealing VRAM.** The embedding model runs on CPU (~50 ms per article) so it can
-  coexist with the summarization model on the GPU.
-- **Local models that "think".** Some Ollama models spend their token budget reasoning and return empty
-  content; thinking is disabled explicitly for summaries.
+- **Quality over speed, on purpose.** Summaries use `gemma4` (~10 GB), which does not fit in an 8 GB GPU and
+  runs split across CPU and GPU. A 7B model would fit entirely in VRAM and be much faster, but it wrote worse
+  Spanish, so the bigger model stayed; swapping models per request was also rejected (15-30 s reload each time).
+- **Embeddings without stealing VRAM.** Loading `nomic-embed-text` on the GPU next to the summarization model
+  saturated the 8 GB of VRAM and made both models time out. It now runs on CPU (~50 ms per article) and leaves
+  the GPU to the summarizer.
+- **Local models that "think".** Hybrid-reasoning models can spend the whole token budget thinking and return
+  empty content; summaries send `think: false`, with a retry for servers that do not support it.
 
 ## Quick start
 
