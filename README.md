@@ -105,12 +105,15 @@ A few problems worth reading about in the commit history:
   keeping a bounded top-K, with regression tests for both.
 - **Ingestion that hung forever.** A `running` flag could stay stuck after a hung model call. Fixed with a
   global watchdog (`Promise.race` timeout) plus a stale-lock guard, so the flag is always released.
-- **Quality over speed, on purpose.** Summaries use `gemma4` (~10 GB), which does not fit in an 8 GB GPU and
-  runs split across CPU and GPU. A 7B model would fit entirely in VRAM and be much faster, but it wrote worse
-  Spanish, so the bigger model stayed; swapping models per request was also rejected (15-30 s reload each time).
-- **Embeddings without stealing VRAM.** Loading `nomic-embed-text` on the GPU next to the summarization model
-  saturated the 8 GB of VRAM and made both models time out. It now runs on CPU (~50 ms per article) and leaves
-  the GPU to the summarizer.
+- **Measured before optimizing.** `gemma4` (~10 GB) does not fit in an 8 GB GPU and runs split across CPU
+  and GPU, so it looked like a speed problem. A 3-article benchmark against `qwen2.5-coder:7b` and
+  `deepseek-r1:8b` (both 100% on GPU) said otherwise: 3.1 s per summary vs 1.7 s and 2.2 s, irrelevant for a
+  background job. The real difference was quality: gemma kept to the length limit every time, but stated an
+  ongoing investigation as established fact. So the model stayed and the prompt changed instead: it now keeps
+  the source's degree of certainty, verified on 6 articles including two confirmed-fact controls so it did not
+  turn timid.
+- **Embeddings on CPU.** `nomic-embed-text` runs on CPU (~50 ms per article): effectively free there, and it
+  leaves every MB of VRAM to the summarizer, which already does not fit.
 - **Local models that "think".** Hybrid-reasoning models can spend the whole token budget thinking and return
   empty content; summaries send `think: false`, with a retry for servers that do not support it.
 
