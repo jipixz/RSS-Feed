@@ -78,8 +78,13 @@ Consumo esperado en la Pi: ~100–150 MB en reposo, picos de 300–450 MB durant
 ingesta (acotado por `--max-old-space-size=512` en `ecosystem.config.js`).
 
 > Si lo expones por Cloudflare Tunnel + Zero Trust, el acceso ya queda autenticado.
-> Para una capa extra puedes definir `API_KEY` en `.env` (los writes exigirán el
-> header `X-API-Key`; nota: la UI aún no manda ese header).
+> Para una capa extra puedes definir `API_KEY` en `.env`: los writes
+> (`POST`/`PATCH`/`DELETE`) exigirán el header `X-API-Key`. Es para
+> máquina-a-máquina —un cron externo, un script—, **no** para el navegador: la UI
+> no manda ese header y no debería, porque una key metida en el bundle JS la ve
+> cualquiera en DevTools. Con `API_KEY` puesta, la web pierde el marcar leído y
+> el disparo manual de ingesta. Por eso viene vacía; el auth del navegador lo
+> hace Cloudflare Access.
 
 ## Deploy en la Raspberry Pi 4B (Docker, alternativa)
 

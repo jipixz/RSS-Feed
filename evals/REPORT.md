@@ -2,10 +2,10 @@
 
 > Generado por `pnpm eval:report` desde `evals/runs/latest.json`. No editar a mano.
 
-- **Fecha:** 2026-10-07T04:29:58.303Z
+- **Fecha:** 2026-10-07T05:33:53.173Z
 - **Modelo:** `gemma4:latest`
 - **Casos:** 40 · **Repeticiones:** 3 · **Observaciones:** 120
-- **Duración:** 5.4 min
+- **Duración:** 6.2 min
 
 ## Métricas
 
@@ -13,9 +13,9 @@
 |---|---|---|---|
 | Atribución conservada | **73.3%** | 83.3% | 66.7% |
 | Matices indebidos | 0.0% | 0.0% | 0.0% |
-| Dentro de 45 palabras | 90.0% | 89.6% | 90.3% |
+| Dentro de 45 palabras | 90.0% | 79.2% | 97.2% |
 | Preámbulo indebido | 0.0% | — | — |
-| Palabras de media | 39.5 | 39.7 | 39.3 |
+| Palabras de media | 39.8 | 40.9 | 39.1 |
 
 **Cómo leerlo.** *Atribución conservada* es la métrica principal: de los artículos
 cuyo hecho central NO está confirmado, qué proporción de resúmenes mantiene la
@@ -30,27 +30,31 @@ como medida fina.
 
 **Fable 5.1 Solves the "Cyphral Distich" (370 year old cipher)** · 3/3 fallos · `iteration`
 
-> Fable 5.1 resolvió el Cyphral Distich, un cifrado sin resolver durante siglos. Esto es importante porque demuestra que modelos avanzados pueden superar métodos criptográficos compl
+> Fable 5.1 resolvió el Cyphral Distich, un cifrado sin resolver durante siglos. Esto es importante porque demuestra que modelos avanzados pueden resolver criptogramas complejos que 
 
 **Hackers exploit Tencent app flaw to deploy GrayRabbit malware** · 3/3 fallos · `iteration`
 
-> Actores de amenaza están explotando una vulnerabilidad RCE en Sogou Input Method de Tencent para desplegar el malware GrayRabbit. Esto es importante porque permite la ejecución rem
+> Actores vinculados a un grupo de espionaje chino están explotando una vulnerabilidad RCE en Sogou Input Method de Tencent para desplegar el malware GrayRabbit. Esto es importante p
 
 **US Customs supervisor busted for stealing hardware from Homeland Secur** · 3/3 fallos · `iteration`
 
-> Un supervisor de Aduanas fue arrestado por robar hardware de más de 46 PCs del Departamento de Seguridad Nacional. Esto es relevante porque demuestra cómo el personal con acceso li
+> Un supervisor de Aduanas fue arrestado por robar hardware de más de 46 PCs del Departamento de Seguridad Nacional. Esto es relevante porque el acceso de Liu, restringido a soporte 
 
 **Slim Spider Steals Crypto Custody Secrets From Brazilian Financial Ins** · 3/3 fallos · `iteration`
 
-> Un actor de amenaza, denominado Slim Spider, ha sido vinculado a ataques en instituciones financieras brasileñas, mostrando conocimiento profundo de infraestructura como Pix y ento
+> Un actor de amenaza sin documentar, llamado Slim Spider, ha atacado instituciones financieras brasileñas desde marzo de 2026, mostrando conocimiento profundo de infraestructura com
 
-**OpenAI's Only Ethicist Reportedly Left Last Month** · 3/3 fallos · `holdout`
+**China-Linked Hackers Deploy New StormEncryptor Ransomware, Likely via ** · 2/3 fallos · `holdout`
+
+> Actores vinculados a China desplegaron StormEncryptor, un ransomware que usa C++ y afecta archivos con extensión .encrypted. Esto podría deberse a la explotación de CVE-2026-18577 
+
+**1.6 Million Likely Impacted by RingCentral Data Breach** · 1/3 fallos · `holdout`
+
+> Aproximadamente 1.6 millones de registros de RingCentral parecen haber sido robados por un grupo de extorsión tras una campaña de ingeniería social. Esto es importante porque, aunq
+
+**OpenAI's Only Ethicist Reportedly Left Last Month** · 1/3 fallos · `holdout`
 
 > La jefa de ética de OpenAI, Chloé Bakalar, dejó la compañía en julio, siendo la única ética dedicada. Esto implica que OpenAI podría estar sin un experto dedicado en ética de IA, l
-
-**Wesco confirms security incident after ExfilSquad claims data theft** · 1/3 fallos · `holdout`
-
-> Wesco confirmó investigar un incidente de ciberseguridad tras la reclamación de ExfilSquad sobre robo de datos en su entorno CRM en la nube. La empresa afirma no haber riesgo para 
 
 
 El patrón dominante: la incertidumbre del original vive en un modificador

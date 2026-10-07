@@ -22,7 +22,8 @@
     "eval:dataset": "cd apps/api && tsx src/evals/build-dataset.ts",
     "eval:run": "cd apps/api && tsx src/evals/run.ts",
     "eval:check": "tsx apps/api/src/evals/check.ts",
-    "eval:report": "cd apps/api && tsx src/evals/report.ts"
+    "eval:report": "cd apps/api && tsx src/evals/report.ts",
+    "eval:compare": "cd apps/api && tsx src/evals/compare.ts"
   },
   "prisma": {
     "schema": "prisma/schema.prisma",

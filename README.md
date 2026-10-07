@@ -105,15 +105,28 @@ A few problems worth reading about in the commit history:
   keeping a bounded top-K, with regression tests for both.
 - **Ingestion that hung forever.** A `running` flag could stay stuck after a hung model call. Fixed with a
   global watchdog (`Promise.race` timeout) plus a stale-lock guard, so the flag is always released.
-- **Measured before optimizing.** `gemma4` (9.6 GB) does not fit in an 8 GB GPU and runs split across CPU
-  and GPU, so it looked like a speed problem. A 3-article benchmark against `qwen2.5-coder:7b` and
-  `deepseek-r1:8b` (both 100% on GPU) said otherwise: 3.1 s per summary vs 1.7 s and 2.2 s, irrelevant for a
-  background job. On the same three articles `qwen2.5-coder:7b` went over the prompt's 45-word limit in 2 of
-  them while `gemma4` stayed inside it in all 3 — a tiny sample, but the only measured difference that
-  mattered for a job nobody waits on. `gemma4` had its own flaw, unrelated to size: it stated an ongoing
-  investigation as established fact. So the model stayed and the prompt changed instead: it now keeps the
-  source's degree of certainty, verified on 6 articles including two confirmed-fact controls so it did not
-  turn timid.
+- **A benchmark that did not survive being redone.** `gemma4` (9.6 GB) does not fit in an 8 GB GPU and runs
+  split across CPU and GPU, so it looked like a speed problem. A hand-run comparison over 3 articles said the
+  7B alternatives were roughly twice as fast. Re-run through the eval harness — same 40 cases, same prompt,
+  120 observations per model — the gap vanished: **3.10 s** for `gemma4:latest`, **3.20 s** for
+  `deepseek-r1:8b`, **3.56 s** for `qwen2.5-coder:7b`. Two runs of the *same* model differed by more (2.70 s
+  vs 3.10 s) than the models differ from each other, so the 3-article benchmark was noise. Normalising by
+  output tells the rest: `gemma4` sits 66% on CPU (`ollama ps`, 10 GB loaded) against 92% on GPU for
+  `qwen2.5-coder:7b`, and still wins on seconds per summary because it writes ~12 fewer words. Per word
+  generated the GPU-resident models *are* ahead — 14.4 and 14.1 words/s against 12.9 — which puts the real
+  payoff of fitting in VRAM at around 10%, not 100%.
+- **The trade-off that is real, and does not favour the current choice.** On the same runs,
+  `qwen2.5-coder:7b` preserves attribution **96.7%** of the time against `gemma4`'s **73.3%** — but it
+  overshoots the 45-word limit in 6 of 10 summaries, where `gemma4` overshoots in 1 of 10. The two metrics
+  are not independent: condensing is exactly what drops the hedge, so a 51-word summary has room for the
+  *"according to a report"* that a 40-word one cuts. That biases the comparison toward the longer model.
+  `gemma4` stays for now and the open question is written down rather than buried: tighten qwen's length in
+  the prompt and measure whether the attribution survives. Per-model numbers in
+  [`evals/MODELS.md`](evals/MODELS.md).
+- **Fixing the model's own flaw in the prompt, not by swapping models.** `gemma4` stated an ongoing
+  investigation as established fact. The prompt now requires it to keep the source's degree of certainty,
+  which is what the eval above measures; swapping models per request was rejected separately (15-30 s reload
+  each time).
 - **Embeddings on CPU.** `nomic-embed-text` runs on CPU (~50 ms per article): effectively free there, and it
   leaves every MB of VRAM to the summarizer, which already does not fit.
 - **Local models that "think".** Hybrid-reasoning models can spend the whole token budget thinking and return
@@ -141,7 +154,8 @@ BleepingComputer, Lobsters), 20 per class, each generated **3 times** because th
 `temperature 0.3` and is not deterministic — **120 observations** per run. The set is split 60/40 into
 `iteration` (used to tune the prompt) and `holdout` (never looked at while tuning).
 
-**Results** (`gemma4:latest`, see [`evals/REPORT.md`](evals/REPORT.md)):
+**Results** (`gemma4:latest`, see [`evals/REPORT.md`](evals/REPORT.md); per-model comparison in
+[`evals/MODELS.md`](evals/MODELS.md)):
 
 | Metric | Overall | Holdout |
 |---|---|---|

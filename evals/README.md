@@ -98,6 +98,16 @@ pnpm eval:check               # aplica los umbrales
 Variables: `EVAL_MODEL` (default `gemma4:latest`), `EVAL_REPEATS` (default `3`),
 `OLLAMA_BASE_URL`.
 
+Solo el modelo de producción actualiza `runs/latest.json`, que es el que verifica
+el CI: medir un modelo alternativo no debe mover la puerta de calidad de lo que
+corre en la Pi. Para comparar varios:
+
+```bash
+EVAL_MODEL=qwen2.5-coder:7b pnpm eval:run
+EVAL_MODEL=deepseek-r1:8b   pnpm eval:run
+pnpm eval:compare             # escribe evals/MODELS.md
+```
+
 Para regenerar el dataset desde la base de datos: `pnpm eval:dataset`. Las
 etiquetas viven en el código (`build-dataset.ts`) porque son juicio humano, no
 algo derivable automáticamente.
@@ -108,7 +118,7 @@ algo derivable automáticamente.
 2. **El scorer es por reglas, no semántico.** Busca marcadores lingüísticos con expresiones regulares. Puede dar falsos positivos (un "según" que aparece por otro motivo) y no entiende el contenido. Un LLM-as-judge sería más fino, pero no podría correr en CI sin una API externa.
 3. **Las etiquetas son de una sola persona,** sin segundo anotador ni medida de acuerdo entre anotadores.
 4. **El eval usa un extracto de 1.200 caracteres** por artículo; producción usa hasta 8.000. La señal de atribución casi siempre está en los primeros párrafos, pero no es exactamente el mismo input.
-5. **Un solo modelo por corrida.** Comparar modelos requiere correr `eval:run` con cada `EVAL_MODEL` y comparar snapshots a mano.
+5. **Un solo modelo por corrida.** Comparar modelos requiere correr `eval:run` una vez por `EVAL_MODEL`; `pnpm eval:compare` junta los snapshots en [`MODELS.md`](MODELS.md). Y la comparación entre modelos está sesgada: el que escribe más largo conserva la atribución más fácil, porque condensar es justo lo que tira el matiz. Comparar atribución sin igualar longitud favorece al más verboso.
 6. **El snapshot se regenera a mano.** Si alguien cambia el prompt y no vuelve a correr `eval:run`, el CI sigue validando el snapshot viejo. El job avisa de la fecha del snapshot, pero no puede obligar a regenerarlo.
 
 ## Contenido de terceros
