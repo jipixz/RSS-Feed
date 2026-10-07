@@ -105,12 +105,14 @@ A few problems worth reading about in the commit history:
   keeping a bounded top-K, with regression tests for both.
 - **Ingestion that hung forever.** A `running` flag could stay stuck after a hung model call. Fixed with a
   global watchdog (`Promise.race` timeout) plus a stale-lock guard, so the flag is always released.
-- **Measured before optimizing.** `gemma4` (~10 GB) does not fit in an 8 GB GPU and runs split across CPU
+- **Measured before optimizing.** `gemma4` (9.6 GB) does not fit in an 8 GB GPU and runs split across CPU
   and GPU, so it looked like a speed problem. A 3-article benchmark against `qwen2.5-coder:7b` and
   `deepseek-r1:8b` (both 100% on GPU) said otherwise: 3.1 s per summary vs 1.7 s and 2.2 s, irrelevant for a
-  background job. The real difference was quality: gemma kept to the length limit every time, but stated an
-  ongoing investigation as established fact. So the model stayed and the prompt changed instead: it now keeps
-  the source's degree of certainty, verified on 6 articles including two confirmed-fact controls so it did not
+  background job. On the same three articles `qwen2.5-coder:7b` went over the prompt's 45-word limit in 2 of
+  them while `gemma4` stayed inside it in all 3 — a tiny sample, but the only measured difference that
+  mattered for a job nobody waits on. `gemma4` had its own flaw, unrelated to size: it stated an ongoing
+  investigation as established fact. So the model stayed and the prompt changed instead: it now keeps the
+  source's degree of certainty, verified on 6 articles including two confirmed-fact controls so it did not
   turn timid.
 - **Embeddings on CPU.** `nomic-embed-text` runs on CPU (~50 ms per article): effectively free there, and it
   leaves every MB of VRAM to the summarizer, which already does not fit.

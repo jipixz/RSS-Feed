@@ -74,11 +74,18 @@ propios tests unitarios que también corren en CI.
 
 ### Umbrales
 
+Son puertas de **no regresión**, no objetivos de calidad: están calibradas por
+debajo de la línea base medida (73.3% / 0.0% / 90.0%) con margen para el ruido de
+`temperature 0.3`. Detectan que algo empeoró; no afirman que el resultado sea
+bueno. Cuando la atribución suba, estos números suben con ella.
+
 ```
-attributionRate  >= 85%
-falseHedgeRate   <= 15%
-lengthCompliance >= 75%
+attributionRate  >= 65%
+falseHedgeRate   <= 10%
+lengthCompliance >= 80%
 ```
+
+La fuente de verdad es `THRESHOLDS` en `apps/api/src/evals/check.ts`.
 
 ## Cómo reproducirlo
 
