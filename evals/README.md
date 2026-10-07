@@ -112,6 +112,42 @@ Para regenerar el dataset desde la base de datos: `pnpm eval:dataset`. Las
 etiquetas viven en el código (`build-dataset.ts`) porque son juicio humano, no
 algo derivable automáticamente.
 
+## Experimento: longitud contra atribución
+
+El comparativo dejó una pregunta sin resolver: `qwen2.5-coder:7b` conserva la
+atribución mucho mejor que `gemma4:latest`, pero también escribe más largo, y
+condensar es justo lo que tira el matiz. ¿Modelo mejor, o modelo más verboso?
+
+Se atacó por dos lados, y están en [`EXPERIMENT-length.md`](EXPERIMENT-length.md):
+
+1. **Observacional**, con los datos que ya había: dentro de cada modelo, comparar
+   la atribución de los resúmenes que salieron cortos contra los que salieron
+   largos. Gratis, pero el modelo eligió la longitud, así que no prueba
+   causalidad.
+2. **Intervención**: forzar la longitud por prompt y volver a medir. Tres brazos
+   definidos en `apps/api/src/evals/variants.ts`:
+
+| Variante | Qué prueba |
+|---|---|
+| `prod` | El prompt real, con el límite blando ("máx. 45 palabras; no te pases"). |
+| `hard-length` | Mismo límite, exigido. **No** dice qué sacrificar: aísla si forzar el recorte rompe la atribución por sí solo. |
+| `hard-length-priority` | Lo anterior más la regla de qué recortar primero: detalle secundario sí, atribución no. |
+
+```bash
+EVAL_MODEL=qwen2.5-coder:7b EVAL_PROMPT=hard-length          pnpm eval:run
+EVAL_MODEL=qwen2.5-coder:7b EVAL_PROMPT=hard-length-priority pnpm eval:run
+pnpm eval:experiment   # escribe evals/EXPERIMENT-length.md
+```
+
+Las variantes se **derivan** del prompt de producción por reemplazo de texto en
+vez de copiarlo, para que no se desincronicen. Si la línea que buscan
+desaparece, revienta a propósito, y `variants.spec.ts` lo caza en CI: medir
+calladamente un prompt que no es el que se cree es peor que un build rojo.
+
+El análisis promedia **por caso**, no por observación: las 3 repeticiones del
+mismo artículo están correlacionadas, así que un intervalo sobre 60
+observaciones finge una precisión que no existe.
+
 ## Limitaciones (léelas antes de creerte los números)
 
 1. **N pequeño.** 40 casos y 120 observaciones dan una señal, no significancia estadística.

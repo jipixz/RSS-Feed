@@ -55,9 +55,14 @@ reporte" que uno de 40 recorta. Así que el eval no mide dos virtudes
 independientes, y comparar atribución entre modelos con longitudes distintas
 favorece al más verboso.
 
-Eso deja una pregunta abierta, que es lo honesto: si se le aprieta la longitud a
-`qwen2.5-coder:7b` por prompt, ¿mantiene el 96.7% de atribución o cae al nivel de
-`gemma4`? Sin medirlo no se sabe. Es el siguiente experimento, no una conclusión.
+Eso dejó una pregunta: si se le aprieta la longitud a `qwen2.5-coder:7b`,
+¿mantiene el 96.7% o cae al nivel de `gemma4`? Se midió, y está en
+[`EXPERIMENT-length.md`](EXPERIMENT-length.md). Resumen: condensar **sí** cuesta
+atribución (forzar `gemma4` a 35 palabras le quitó 10 puntos), pero eso no explica
+la diferencia entre modelos —a igualdad de longitud qwen sigue 15 puntos arriba— y
+el brazo que iba a zanjarlo no se pudo correr, porque al exigirle el límite
+`qwen2.5-coder:7b` escribió **más** largo. Un modelo al que no se le puede imponer
+una longitud no sirve para este caso de uso, con o sin la pregunta original.
 
 ## Todas las corridas
 

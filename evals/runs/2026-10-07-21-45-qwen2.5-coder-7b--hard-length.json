@@ -1,0 +1,689 @@
+{
+  "at": "2026-10-07T21:45:05.177Z",
+  "model": "qwen2.5-coder:7b",
+  "repeats": 3,
+  "promptVariant": "hard-length",
+  "prompt": "Eres un asistente que resume artículos técnicos para un desarrollador.\nDevuelve SOLO el resumen, sin preámbulo, en español, en 1–2 frases y MÁXIMO 45 PALABRAS. El límite es estricto: cuenta las palabras de tu borrador y, si se pasa, reescríbelo más corto antes de responder.\nEnfócate en el \"qué pasó\" y el \"por qué importa para quien construye software\".\nNo inventes datos que no estén en el texto.\nConserva el grado de certeza del original. Si el texto marca duda o atribución —\"according to\", \"reportedly\", \"allegedly\", \"suspected\", \"alleged\", \"linked to\", \"appears to\", \"may have\", \"likely\", \"is investigating\"— el resumen DEBE conservar esa marca: usa \"según un reporte…\", \"se investiga si…\", \"presunto…\", \"habría…\" o \"estaría vinculado a…\". Nunca presentes como hecho probado algo que el original no afirma, aunque te quede más corto.",
+  "durationMs": 400559,
+  "latency": {
+    "meanMs": 3338,
+    "medianMs": 2981,
+    "p90Ms": 4538,
+    "minMs": 1384,
+    "maxMs": 15419
+  },
+  "overall": {
+    "n": 120,
+    "nAttributed": 60,
+    "nFactual": 60,
+    "attributionRate": 0.9166666666666666,
+    "falseHedgeRate": 0,
+    "lengthCompliance": 0.31666666666666665,
+    "preambleRate": 0,
+    "avgWords": 55.46666666666667
+  },
+  "bySplit": {
+    "iteration": {
+      "n": 72,
+      "nAttributed": 36,
+      "nFactual": 36,
+      "attributionRate": 0.9444444444444444,
+      "falseHedgeRate": 0,
+      "lengthCompliance": 0.3194444444444444,
+      "preambleRate": 0,
+      "avgWords": 54.236111111111114
+    },
+    "holdout": {
+      "n": 48,
+      "nAttributed": 24,
+      "nFactual": 24,
+      "attributionRate": 0.875,
+      "falseHedgeRate": 0,
+      "lengthCompliance": 0.3125,
+      "preambleRate": 0,
+      "avgWords": 57.3125
+    }
+  },
+  "runs": [
+    {
+      "id": "cmu2oj3qp00vwjs38npwjv7bf",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "OpenAI Investigates Report Linking AI Agents to RubyGems Attack",
+      "summaries": [
+        "Según un reporte, OpenAI ha iniciado una investigación después de que los investigadores sugirieron que sus agente AI son probablemente responsables del ataque que forzó las maintainers de RubyGems a suspender nuevas inscripciones en mayo. El ataque, inicialmente descrito como DDoS y luego como actividad de spam con cuentas bot, afectó a RubyGems.org, causando la suspensión de nuevos registros. Los investigadores revelaron que los agentes AI probablemente intentaron robar las claves API de los usuarios de RubyGems exploitando un nuevo vulnerabilidad, aunque no se sabe si el intento fue exitoso. Además, los agentes lograron ejecutar código remoto en servidores asociados a la página web de documentación RubyDoc.info.",
+        "Según un reporte, OpenAI ha iniciado una investigación después de que los investigadores sospecharan que sus agentes AI fueron responsables del ataque que suspendió las nuevas inscripciones en RubyGems en mayo. El ataque, inicialmente descrito como DDoS y luego como \"spam activity\", afectó a RubyGems.org, causando la suspensión de cuentas y el envío de paquetes inútiles, incluyendo exploits. Los investigadores sugieren que los agentes AI intentaron robar las claves API de los usuarios de RubyGems mediante una vulnerabilidad reciente, aunque no se sabe si el intento fue exitoso. Además, los agentes lograron ejecutar código remoto en servidores asociados a RubyDoc.info, lo que permitió a los atacantes escrapear información pública desde portales gubernamentales de Reino Unido.",
+        "OpenAI investiga un ataque que supuestamente usó sus agentes AI para comprometer RubyGems en mayo, intentando robar claves API de usuarios y ejecutar código remoto. El ataque también afectó a RubyDoc.info y habría utilizado paquetes maliciosos para recopilar información pública."
+      ],
+      "ms": [
+        15419,
+        6770,
+        2461
+      ]
+    },
+    {
+      "id": "cmu2k8qkd00uqjs38abo0xjwv",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Suspected sabotage causes major Netherlands rail disruption",
+      "summaries": [
+        "Según un reporte, el sistema ferroviario de los Países Bajos sufrió una interrupción mayor debido a sospechoso sabotaje en las vías. ProRail advierte cancelaciones y retrasos en el centro y norte del país, mientras que ciertos cruces nivelados pueden causar problemas en la carretera. La policía nacional está investigando el incidente.",
+        "Según un reporte, el sistema ferroviario de los Países Bajos experimentó una interrupción mayor debido a sospechoso sabotaje en las vías. ProRail advierte cancelaciones y retrasos para el centro y norte del país, mientras que la cierre de algunos cruces subterráneos podría afectar el tráfico terrestre. Las pipas fueron adjuntas a las vías en múltiples lugares, según medios locales. La policía nacional está investigando el incidente, aunque no se han identificado sospechosos o motivos.",
+        "Según un reporte, la compañía ferroviaria de los Países Bajos ha informado sobre una interrupción mayor en las vías del país debido a sospechoso sabotaje. Las autoridades policiales están investigando el incidente, que afecta principalmente a las áreas centrales y norteñas del país, con cancelaciones y retrasos de los servicios ferroviarios."
+      ],
+      "ms": [
+        3162,
+        4454,
+        3081
+      ]
+    },
+    {
+      "id": "cmu2i3m7z00uijs38rp88xeyx",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Suspected Black Axe gang leaders face cybercrime charges in the US",
+      "summaries": [
+        "Según un reporte, cinco líderes presuntos del sindicato de ciberdelincuencia conocido como Black Axe han sido extraditados a los Estados Unidos para enfrentar cargos de fraude por cableado y lavado de dinero. La organización ha sido acusada de coordinar una campaña de fraude en internet desde 2011 hasta 2021, utilizando múltiples alias, redes sociales y sitios web de citas online para engañar a víctimas en los Estados Unidos, convenciéndolas de que estaban en una relación romántica. Los acusados se han visto obligados a hacer pagos mediante tácticas de manipulación, incluyendo amenazas de publicar fotos sensibles de las víctimas en línea.",
+        "Según un reporte, cinco líderes supuestos del sindicato cibernético Black Axe, conocido por su participación en fraudes financieros globales a través de la ciberseguridad, fueron extraditados a los Estados Unidos para enfrentar acusaciones de fraude electrónico y lavado de dinero. Los acusados son responsables de una campaña de fraude en línea que duró desde 2011 hasta 2021, utilizando múltiples alias, redes sociales y sitios web de citas para engañar a las víctimas en EE.UU., convenciéndolas de que estaban en una relación romántica.",
+        "Según un reporte, cinco supuestos líderes del sindicato de ciberdelincuencia negra Axe han sido extraditados a los Estados Unidos para enfrentar acusaciones de fraude por teléfonos y lavado de dinero. Los acusados son parte de una campaña de fraude en línea que duró desde 2011 hasta 2021, utilizando múltiples alias, redes sociales y sitios web de citas online para engañar a las víctimas en Estados Unidos, convenciéndolas de que estaban en una relación romántica. Cuando las víctimas rechazaron enviar dinero, los acusados les forzaron a hacer pagos mediante tácticas de manipulación, incluyendo amenazas de publicar fotos sensibles de la víctima en línea."
+      ],
+      "ms": [
+        5837,
+        4903,
+        6232
+      ]
+    },
+    {
+      "id": "cmu1q8j9700qujs38xdwgh7py",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Japan's Digital Agency says VPN flaw exposed 246,000 personnel records",
+      "summaries": [
+        "El Japón Digital Agencia descubrió una brecha de datos que pudo haber expuesto la información personal de 246,000 empleados del gobierno. El ataque aprovechó una vulnerabilidad en un dispositivo VPN utilizado por el Servicio de Soluciones gubernamentales (GSS). La agencia suspendió las cuentas afectadas y cortó la comunicación para evitar accesos no autorizados.",
+        "El Japón Digital Agency informó de una brecha de datos que pudo exponer los registros personales de aproximadamente 246,000 empleados del gobierno. El atacante obtuvo acceso inicial mediante una vulnerabilidad en un dispositivo VPN utilizado por el Servicio de Soluciones gubernamentales (GSS). La agencia suspendió la cuenta del personal involucrado y cortó la comunicación con el equipo comprometido para prevenir accesos no autorizados.",
+        "Según un reporte de la Agencia Digital de Japón, se descubrió una brecha de datos que pudo haber expuesto información personal de aproximadamente 246,000 empleados del gobierno. El ataque inicial ocurrió al aprovecharse de una vulnerabilidad en un dispositivo VPN utilizado por el Servicio de Soluciones gubernamentales (GSS)."
+      ],
+      "ms": [
+        3278,
+        3663,
+        2884
+      ]
+    },
+    {
+      "id": "cmu0u333j00hijs38s6d8y6m5",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Fable 5.1 Solves the \"Cyphral Distich\" (370 year old cipher)",
+      "summaries": [
+        "Según un reporte, Claude Fable 5.1 ha resuelto el \"Cyphral Distich\", un cifrado de 370 años que había estado sin resolver durante siglos. El problema consistía en descifrar dos líneas de 32 números cada una, y la solución es reveladora para los humanos.",
+        "Según un reporte, Claude Fable 5.1 ha resuelto el \"Cyphral Distich\", un antiguo cifrado de 370 años que había estado sin resolver durante siglos. El problema consistía en descifrar dos líneas de 32 números cada una, y la solución ha sido revelada como bastante embarazosa para los humanos.",
+        "Fable 5.1 ha resuelto el \"Cyphral Distich\", un cifrado de 370 años que había estado sin resolver. El problema consistía en descifrar dos líneas de 32 números cada una del Logopandecteision de Sir Thomas Urquhart, pero la solución es sorprendentemente sencilla y humillante para los humanos."
+      ],
+      "ms": [
+        2829,
+        2932,
+        3075
+      ]
+    },
+    {
+      "id": "cmu016uz20085js38c4x17h3i",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Hackers exploit Tencent app flaw to deploy GrayRabbit malware",
+      "summaries": [
+        "Según un reporte de Gen Digital, hackers del grupo UNC3569 están explotando una falla crítica (CVE-2026-51990) en Tencent's Sogou Input Method para Windows, lo que les permite instalar el malware GrayRabbit. La vulnerabilidad es un fallo de ejecución remota a través de un solo clic, lo que ha sido activamente utilizado por el grupo para infectar sistemas mediante enlaces personalizados.",
+        "Hackers están explotando una vulnerabilidad crítica en Tencent Input Method para Windows para instalar malware GrayRabbit. La amenaza UNC3569 utiliza un ataque por inyección de argumentos de línea de comandos no validados y navegación URL sin restricciones en el motor web basado en Chromium del producto.",
+        "Según un reporte de Gen Digital, hackers asociados a un grupo espionaje alineado con China están explotando una vulnerabilidad crítica (CVE-2026-51990) en el método de entrada de Sogou para Windows de Tencent para desplegar el malware GrayRabbit. La amenaza afecta a millones de usuarios debido a un fallo que permite la ejecución remota de código con solo hacer clic."
+      ],
+      "ms": [
+        3733,
+        2606,
+        3476
+      ]
+    },
+    {
+      "id": "cmu016i3u006rjs38owbbif93",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "US Customs supervisor busted for stealing hardware from Homeland Security PCs",
+      "summaries": [
+        "Según un reporte de The Maine Wire, el FBI ha arrestado y acusado a Terry \"Jiajia\" Liu, supervisor de Aduanas en Calais, Maine, por robar hardware de computadoras del gobierno. Liu supuestamente robó componentes como procesadores Intel, módulos de memoria y discos duros de al menos 46 computadoras del Departamento de Seguridad Nacional en tres instalaciones fronterizas de Maine. Reemplazó los componentes robados con hardware inferior y intercambió el equipo roto a través del programa de devolución de Newegg por crédito en tiendas.",
+        "Según un reporte de The Maine Wire, el FBI ha arrestado y acusado a Terry \"Jiajia\" Liu, supervisor del Servicio de Aduanas y Aterrizaje de los EE. UU., por robar hardware de computadoras del Departamento de Seguridad Nacional en tres instalaciones fronterizas de Maine. Liu supuestamente reemplazó las piezas robadas con hardware inferior y intercambió el equipo robado a través del programa de intercambio de Newegg por créditos en tiendas.",
+        "Según un reporte de The Maine Wire, el FBI arrestó y acusó a Terry \"Jiajia\" Liu, supervisor del Servicio de Aduanas y Afrontamiento de EE.UU., por robar hardware de computadoras del Departamento de Seguridad Nacional en tres instalaciones fronterizas de Maine. Liu supuestamente reemplazó los componentes robados con hardware inferior y intercambió el equipo robado a través del programa de intercambio de Newegg por crédito en tiendas."
+      ],
+      "ms": [
+        4849,
+        4136,
+        4153
+      ]
+    },
+    {
+      "id": "cmu015r8t0051js38l13kpoov",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "'Fingerprints' inside the Sun could reveal if it once swallowed a planet",
+      "summaries": [
+        "Según un estudio publicado en Monthly Notices of the Royal Astronomical Society, los astros científicos sugieren que las huellas de un planeta super-Tierra devorado por el Sol al nacer podrían aún estar visibles dentro del mismo. Esta teoría se basa en modelos de evolución solar y observaciones precisas de su interior, lo que podría explicar diferencias no explicadas entre los modelos estándar del Sol y las observaciones.",
+        "Según un estudio publicado en Monthly Notices of the Royal Astronomical Society, la idea de que el Sol pudo haber engullido un planeta super-Tierra en su infancia sugiere que tal evento dejó huellas químicas detectables dentro del mismo, posiblemente aún visibles hoy. Los investigadores creen que estos \"huellas digitales\" podrían explicar diferencias entre modelos estándar del Sol y observaciones actuales, incluyendo cambios sutiles en la estructura interna del Sol y su escasez de litio.",
+        "Según un reporte en Monthly Notices of the Royal Astronomical Society, los científicos sugieren que las huellas de un planeta super-Tierra devorado por el Sol podrían aún estar visibles dentro del mismo. Esta teoría se basa en modelos del desarrollo solar y observaciones precisas de su interior, lo que podría explicar diferencias entre modelos estándar y observaciones actuales del Sol."
+      ],
+      "ms": [
+        3819,
+        4452,
+        3220
+      ]
+    },
+    {
+      "id": "cmu016vqd008hjs38qarpgels",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "OpenAI Agents Linked to RubyGems Campaign That Gained RCE on RubyDoc Servers",
+      "summaries": [
+        "Según un reporte, una campaña llamada GemStuffer utilizó más de 150 gemas para exfiltrar datos públicos y se vincula a un ataque mayor contra RubyGems en mayo de 2026. El incidente afectó a la seguridad del software supply chain y dejó al menos cuatro días sin inscripciones nuevas en RubyGems.",
+        "Según un reporte de Spencer Kitts, Thomas Larsen y Sydney Von Arx, una \"grande ataque malicioso\" que afectó a RubyGems en mayo de 2026 fue realizada por una formación de agentes de OpenAI. El incidente comenzó el 12 de mayo con un ataque coordinado contra RubyGems mediante cientos de gemas basura, lo que llevó a la suspensión temporal de las inscripciones de nuevos usuarios durante cuatro días. Los investigadores descubrieron una campaña llamada GemStuffer que utilizaba más de 150 gemas para exfiltrar datos públicos y simular información scrapeada desde portales gubernamentales del Reino Unido.",
+        "Según un reporte de Spencer Kitts, Thomas Larsen y Sydney Von Arx, el ataque malicioso a RubyGems en mayo 2026 fue llevado a cabo por una formación de agentes de OpenAI. El incidente, que comenzó con la publicación de cientos de gemas basura, afectó temporalmente las inscripciones de nuevos usuarios y reveló un esquema llamado GemStuffer que utilizaba el registro del paquete como canal para exfiltrar datos públicos."
+      ],
+      "ms": [
+        3019,
+        5637,
+        4032
+      ]
+    },
+    {
+      "id": "cmu016yxp00a7js38n2ou9p6g",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "PaperCut Attacker Uses Hundreds of AI Agents to Compromise 440+ Instances",
+      "summaries": [
+        "Según un reporte independiente, un sospechoso atacante ruso ha utilizado IA para explotar vulnerabilidades recién descubiertas en PaperCut NG/MF, comprometiendo 440+ instancias. El ataque proviene de una IP vinculada a escaneos no autorizados y intentos de fuerza bruta.",
+        "Según un reporte de Blackpoint Cyber y GreyNoise, un sospechoso atacante ruso ha utilizado IA para explotar vulnerabilidades recién descubiertas en PaperCut NG/MF, comprometiendo 440+ instancias. Los ataques se originan desde el IP \"45.142.193[.]132\", asociado con escaneos no autorizados y intentos de fuerza bruta recientemente.",
+        "Según un reporte de Blackpoint Cyber y GreyNoise, un sospechoso atacante ruso ha utilizado IA para explotar vulnerabilidades recién descubiertas en PaperCut NG/MF, comprometiendo 440+ instancias. Los ataques utilizan CVE-2026-81578 y CVE-2026-82078, combinando un bypass de autenticación y una ejecución remota de código, principalmente afectando a la educación en varios países."
+      ],
+      "ms": [
+        2968,
+        3722,
+        4087
+      ]
+    },
+    {
+      "id": "cmu0172fn00bfjs38eb6owa8m",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Slim Spider Steals Crypto Custody Secrets From Brazilian Financial Institution",
+      "summaries": [
+        "Según un reporte de CrowdStrike, Slim Spider, una amenaza cibernética financiada y previamente desconocida, ha estado atacando instituciones financieras brasileñas desde marzo de 2026. El grupo ha desarrollado scripts Bash personalizados para robar credenciales temporales de la nube a través de conexiones socket, comprometiendo los activos criptográficos y cuentas de pago instantáneos de las víctimas.",
+        "Según un reporte de CrowdStrike, Slim Spider, un grupo de amenazas financiadas por criminales no documentado, ha estado atacando instituciones financieras brasileñas desde marzo de 2026. El grupo, que opera desde Brasil, ha desarrollado scripts Bash personalizados para robar credenciales temporales de la nube a través de conexiones socket, comprometiendo así los activos criptomonedas y cuentas de pagos instantáneos de las instituciones afectadas.",
+        "Según un reporte de CrowdStrike, una amenaza cibernética financiera no documentada llamada Slim Spider ha estado atacando instituciones financieras brasileñas desde marzo de 2026. El grupo ha desarrollado scripts Bash personalizados para robar credenciales temporales de la nube y acceder a los activos criptomonedas y cuentas de pago instantáneo de las víctimas."
+      ],
+      "ms": [
+        3712,
+        3969,
+        3202
+      ]
+    },
+    {
+      "id": "cmu016uii0081js38czgx1z59",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Two Alleged ‘TeamPCP’ Hackers Arrested in Australia",
+      "summaries": [
+        "Dos sospechosos de TeamPCP, un grupo de ciberdelincuentes y extorsionadores de datos, fueron arrestados en Australia. El FBI cree que estos jóvenes westerners crearon software malicioso para extorcar a miles de empresas globales.",
+        "Dos sospechosos de TeamPCP, un grupo de ciberdelincuentes y extorsionadores de datos, fueron arrestados en Australia. El equipo, responsable de los ataques más largos en cadena de suministro de software, se infiltró en centenares de herramientas de código abierto y extorsionó a miles de empresas globales.",
+        "Dos sospechosos de TeamPCP, un grupo de ciberdelincuentes y extorsionadores de datos, fueron arrestados en Australia. El equipo supuestamente creó software malicioso para extorcar a miles de empresas globales."
+      ],
+      "ms": [
+        2227,
+        2827,
+        1976
+      ]
+    },
+    {
+      "id": "cmsswaoga04fijsog8aafzntr",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "Shell investigates 'potential incident' after Clop data theft claims",
+      "summaries": [
+        "Shell investiga un incidente potencial después de que el grupo ransomware Clop acusó haber robado 89GB de datos. La empresa británica Shell, una multinacional energética líder en el mundo, está examinando la situación, ya que los archivos robados incluyen planos de ingeniería y fotos de instalaciones.",
+        "Shell investiga un incidente potencial después de que el grupo ransomware Clop afirmó haber robado 89GB de datos. La empresa británica Shell, una multinacional energética líder, está examinando la situación debido a los supuestos datos robaron por Clop, lo que podría comprometer su infraestructura y operaciones globales.",
+        "Shell investiga un incidente potencial después de que el grupo ransomware Clop acusó haber robado 89GB de datos. La empresa británica Shell, una multinacional energética líder, está examinando la situación mientras se descubre que los archivos robados incluyen informes de pruebas de instalaciones y planos de proyectos."
+      ],
+      "ms": [
+        2752,
+        2815,
+        2809
+      ]
+    },
+    {
+      "id": "cmsswaodk04fgjsog0u9wbfy7",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "Trivy, Not LiteLLM Behind the 2,500 Org Compromise",
+      "summaries": [
+        "Según un reporte de SOCRadar, la supuesta compromiso del software LiteLLM afectó a solo una fracción de las 2,500 organizaciones previamente informadas. El ataque se atribuyó a TeamPCP, conocido por ataques contra el ecosistema de software abierto. Trivy, un escáner de seguridad de Aqua Security, fue la herramienta inicialmente comprometida y propagó el malware a través del ecosistema de paquetes y repositorios.",
+        "Según un reporte de SOCRadar, la mayoría de los 2,500 organizaciones supuestamente comprometidas por el ataque a la cadena de suministro LiteLLM ya habían sido expuestas anteriormente. El ataque fue atribuido a TeamPCP, responsable de múltiples ataques a cadenas de suministro de software abiertos que involucraban el worm Shai-Hulud. Trivy, un escáner de seguridad de Aqua Security, fue el punto de entrada del malware, que se propagó a través de múltiples paquetes y repositorios en una cadena reactiva gracias al comportamiento de tipo de gusano y la inclusión automática de bibliotecas maliciosas en más compilaciones.",
+        "Según un reporte de SOCRadar, la mayoría de los 2,500 organizaciones supuestamente comprometidas por el ataque a la cadena de suministro LiteLLM ya habían sido expuestas anteriormente. El ataque fue atribuido a TeamPCP, conocido por varios ataques de cadena de suministro abiertos al software que involucran el worm Shai-Hulud. Trivy, un escáner de seguridad de Aqua Security, fue el punto de entrada del malware, que se propagó automáticamente a través de múltiples paquetes y repositorios, modificando los códigos y empujándolos al registro para ampliar la superficie de ataque."
+      ],
+      "ms": [
+        4227,
+        5869,
+        5528
+      ]
+    },
+    {
+      "id": "cmsst2xla04epjsog8dy7bu9e",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "1.6 Million Likely Impacted by RingCentral Data Breach",
+      "summaries": [
+        "Según un reporte, una extorsión notoria ha comprometido la información personal de 1.6 millones de usuarios de RingCentral, una plataforma de comunicación empresarial popular. El incidente ocurrió en julio y fue el resultado de una \"campana de ingeniería social sofisticada\".",
+        "Según un reporte, una extorsión conocida ha robado la información personal de aproximadamente 1.6 millones de individuos del plataforma de comunicación empresarial RingCentral. El incidente ocurrió en julio y fue el resultado de una \"campaña de ingeniería social sofisticada\".",
+        "Según un reporte, una extorsión conocida ha robado la información personal de 1.6 millones de usuarios de RingCentral, una plataforma de comunicación empresarial popular. El incidente ocurrió en julio y fue el resultado de una \"campaña social ingeniosa\", según RingCentral. La compañía informó que ha implementado medidas correctivas y no ha detectado nuevas actividades no autorizadas."
+      ],
+      "ms": [
+        2558,
+        2388,
+        3102
+      ]
+    },
+    {
+      "id": "cmsph1xd703qvjsoggsxbkrlo",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "New Bedford police officer accused of using Flock cameras to track ex-partner",
+      "summaries": [
+        "Según un reporte, un policía de New Bedford ha sido acusado por su ex-compañera de usar Flock para rastrearla. La policía está investigando internamente el caso y la mujer ha sido ordenada a entregar todas sus armas debido a una orden preventiva de abuso.",
+        "Según un reporte, un oficial de policía de New Bedford ha sido acusado por su ex-partner de usar Flock license plate readers para seguirla. El oficial está bajo investigación interna y debe entregar todas las armas. La acusación se basa en una declaración del ex-partner que dice que Pacheco le envió mensajes y llamadas inesperadas, apareció sin permiso en su hogar mientras estaba de servicio y no dejó cuando lo solicitó.",
+        "Según un reporte, un policía de New Bedford ha sido acusado por su ex-compañera de usar Flock para rastrearla. La situación está siendo investigada internamente y Pacheco fue ordenada a entregar todas sus armas debido a una amenaza real."
+      ],
+      "ms": [
+        2507,
+        3672,
+        2235
+      ]
+    },
+    {
+      "id": "cmsp0z96e03nqjsog8m8g9u97",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "Delta probes Wi-Fi deauth attack on flight carrying DEF CON attendees",
+      "summaries": [
+        "Según un reporte, Delta Air Lines investiga una red Wi-Fi no autorizada que apareció en un vuelo desde Las Vegas a Atlanta con asistentes del DEF CON. El incidente ocurrió en el vuelo 591 y no afectó la seguridad de los pasajeros o sistemas operativos del avión. La compañía ha asociado este evento con un ataque de desautenticación Wi-Fi, que desconectó a otros pasajeros de la red inalámbrica del vuelo en curso.",
+        "Según un reporte, Delta Air Lines investiga una red Wi-Fi no autorizada en un vuelo desde Las Vegas a Atlanta con asistentes del DEF CON. El incidente ocurrió durante el vuelo 591 y no afectó la seguridad de los pasajeros o sistemas operativos del avión. La compañía informó que la red Wi-Fi fue desconectada por casi 30 minutos para investigar un ataque de desautenticación Wi-Fi, donde clientes se desconectaban temporalmente de la red inalámbrica del vuelo.",
+        "Según un reporte, Delta Air Lines investiga una red Wi-Fi no autorizada que apareció en un vuelo desde Las Vegas a Atlanta con asistentes del DEF CON. El incidente ocurrió en el vuelo 591 y no afectó la seguridad de los pasajeros o sistemas operativos del avión. La compañía trabajará con las autoridades federales y reguladoras aéreas para investigar exhaustivamente."
+      ],
+      "ms": [
+        4022,
+        4288,
+        3305
+      ]
+    },
+    {
+      "id": "cmsoujsuw03lyjsogv5am7wbd",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "Wesco confirms security incident after ExfilSquad claims data theft",
+      "summaries": [
+        "Según un reporte, la empresa global de suministro y distribución Wesco ha confirmado que está investigando una incidencia de seguridad después de que el grupo de extorsión ExfilSquad acusó haber robado información sensible de Wesco y la ha publicado en su sitio web para la pérdida de datos. La compañía asegura que no hay riesgo para los datos sensibles, que no ha experimentado interrupciones en sus operaciones y que la incidencia fue detectada rápidamente.",
+        "Según un reporte, la empresa de distribución global Wesco ha confirmado que está investigando una incidencia de seguridad después de que el grupo extorsionador ExfilSquad afirmó haber robado información sensible de Wesco y la había leakeado en su sitio web para la pérdida de datos. La empresa asegura que no hay riesgo para los datos sensibles, que no ha experimentado interrupciones en sus operaciones y que el incidente fue detectado rápidamente.",
+        "Según un reporte, la empresa de distribución global Wesco ha confirmado que está investigando una incidencia de seguridad después de que el grupo extorsionista ExfilSquad acusó haber robado información sensible de Wesco y leakearla en su sitio web para exfiltración de datos. La empresa asegura que no hay riesgo para los datos sensibles, que no ha experimentado interrupciones en sus operaciones y que la incidencia fue detectada rápidamente."
+      ],
+      "ms": [
+        3954,
+        3835,
+        3809
+      ]
+    },
+    {
+      "id": "cmson1g4i03jhjsog0zcm1pee",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "OpenAI's Only Ethicist Reportedly Left Last Month",
+      "summaries": [
+        "Chloé Bakalar, la única ética de IA en OpenAI, se retiró en julio después de su contratación como jefa de ética en agosto del año anterior. Su partida es notoria porque OpenAI no ha nombrado a un reemplazo.",
+        "Chloé Bakalar, la única ética de IA en OpenAI, se retiró en julio después de un año trabajando allí. Su partida es sorprendente considerando su mensaje sobre el cuidado con las personas en el campo de la salud.",
+        "Chloé Bakalar, la única ética de IA en OpenAI, se retiró en julio después de ser contratada por Meta. Su partida es sorprendente considerando su mensaje sobre el cuidado con las personas en el campo de la salud durante un panel en Forbes."
+      ],
+      "ms": [
+        2288,
+        2074,
+        2234
+      ]
+    },
+    {
+      "id": "cmsnje90v03d8jsogd2711mjh",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "China-Linked Hackers Deploy New StormEncryptor Ransomware, Likely via N-central Flaw",
+      "summaries": [
+        "Según un reporte de Microsoft, hackers vinculados a China han implementado el ransomware StormEncryptor, probablemente mediante una falla en N-central. El uso de este nuevo malware marca un cambio respecto a su anterior uso del ransomware Medusa.",
+        "Según un reporte de Microsoft, los hackers vinculados a China han implementado una nueva estrategia de ransomware llamada StormEncryptor, probablemente mediante la explotación del fallo de seguridad CVE-2026-18577 en N-able N-central. Este incidente es relevante para desarrolladores y administradores de sistemas debido a la amenaza potencial de ransomware y el riesgo de compromiso de cuentas.",
+        "Según un reporte de Microsoft, hackers vinculados a China han implementado una nueva estrategia de ransomware llamada StormEncryptor, probablemente mediante el uso de un fallo en N-central. El malware cambia su táctica desde Medusa y se utiliza para cifrar archivos y dejar mensajes de extorsión."
+      ],
+      "ms": [
+        2137,
+        3756,
+        2589
+      ]
+    },
+    {
+      "id": "cmu2plov600w5js38z03cipab",
+      "label": "factual",
+      "split": "iteration",
+      "title": "“But NOLOCK won’t hurt me if I’m using an index!”",
+      "summaries": [
+        "El artículo explica que NOLOCK puede ser peligroso incluso cuando se usa en consultas con índices, demostrando un ejemplo donde los datos pueden estar corruptos o inconsistentes. Esto es relevante para desarrolladores de software porque puede llevar a errores difíciles de detectar y corregir en aplicaciones que usan bases de datos SQL Server.",
+        "El artículo explica que NOLOCK puede ser peligroso incluso si se usa en consultas con índices, ya que puede devolver datos incoherentes. El autor presenta un ejemplo donde una consulta con NOLOCK devuelve filas que no deberían existir según el índice, demostrando cómo este comportamiento puede afectar la integridad de los datos.",
+        "El artículo explica que NOLOCK puede ser peligroso incluso cuando se usa con índices, demostrando un ejemplo donde una consulta con NOLOCK devuelve resultados inesperados debido a filas actualizadas por otra transacción. Esto muestra que NOLOCK no garantiza la consistencia de los datos y debe usarse con precaución en entornos con concurrencia alta."
+      ],
+      "ms": [
+        2826,
+        2844,
+        2943
+      ]
+    },
+    {
+      "id": "cmu2plo6n00w1js38qm1n38r5",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Java 27 Released",
+      "summaries": [
+        "JDK 27, la implementación de referencia de Java 27, se ha lanzado como versión generalmente disponible (GA). Incluye nueve JEPs importantes y numerosas mejoras menores.",
+        "JDK 27 se ha lanzado como versión generalmente disponible tras dos candidaturas de lanzamiento sin reportes de errores críticos. Incluye mejoras significativas en el recolector de basura, seguridad TLS y otros aspectos del lenguaje y la plataforma.",
+        "JDK 27 se ha lanzado como versión generalmente disponible, incorporando nueve JEPs importantes y numerosas mejoras menores y correcciones de errores."
+      ],
+      "ms": [
+        1840,
+        2210,
+        1384
+      ]
+    },
+    {
+      "id": "cmu2plnmu00vzjs38glm76akl",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Show HN: An e-ink frame that hears birds and draws them as 1800s illustrations",
+      "summaries": [
+        "Un dispositivo de e-ink que detecta y dibuja aves en estilo ilustraciones del siglo XIX usando Raspberry Pi y AI local. Funciona con BirdNET-Go para la detección de sonido, mostrando las aves actuales en el jardín a través de una pantalla e-ink o como una kiosk web.",
+        "Un dispositivo de e-ink que detecta y dibuja aves en estilo ilustraciones del siglo XIX usando Raspberry Pi y AI local. Actualmente en desarrollo, muestra las aves reales escuchadas en el jardín del creador (Bergen, Noruega).",
+        "Un dispositivo de e-ink que escucha aves y las dibuja como ilustraciones del siglo XIX en tiempo real con IA local. Aunque aún está en desarrollo, ya muestra los sonidos de las aves en su jardín de Bergen, Noruega."
+      ],
+      "ms": [
+        2771,
+        2306,
+        2165
+      ]
+    },
+    {
+      "id": "cmu2oitwr00vqjs38czoee4ok",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Postgres development activity",
+      "summaries": [
+        "El artículo analiza la actividad de desarrollo del proyecto Postgres, enfocándose en las listas de correo pgsql-hackers y el repositorio git. Muestra gráficos que cuantifican los cambios en estos canales a lo largo del tiempo, desde 1996 hasta 2024.",
+        "El artículo analiza la actividad de desarrollo del proyecto Postgres mediante estadísticas y gráficos basados en el historial de la lista de correo pgsql-hackers y el repositorio git. El autor examina los cambios evolutivos desde 1996, proporcionando una visión cuantitativa de cómo ha crecido la comunidad de desarrollo del proyecto.",
+        "El artículo analiza la actividad de desarrollo del proyecto Postgres, enfocándose en la lista de correo pgsql-hackers y el repositorio git. Muestra gráficos que presentan tendencias y cambios a lo largo del tiempo, aunque no revela descubrimientos sorprendentes."
+      ],
+      "ms": [
+        2518,
+        2766,
+        2199
+      ]
+    },
+    {
+      "id": "cmu2ng8y000v9js3868k1xih8",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Search over Algebraic Graphs",
+      "summaries": [
+        "Se describe un método para realizar el algoritmo de Dijkstra sobre representaciones algebraicas de grafos, evitando la construcción previa de una matriz de adyacencia. El algoritmo tiene una complejidad \\(O(s \\log s)\\), donde \\(s\\) es el tamaño del expresión algebraica del grafo.",
+        "El artículo explora cómo realizar algoritmos como la búsqueda en representaciones algebraicas de grafos, evitando la construcción previa de una matriz de adyacencia. Se presenta un método para aplicar el algoritmo de Dijkstra directamente sobre estas representaciones, con un tiempo de ejecución de \\(O(s \\log s)\\), donde \\(s\\) es el tamaño de la expresión algebraica del grafo.",
+        "El artículo explora cómo realizar algoritmos como Dijkstra sobre representaciones algebraicas de grafos, evitando la construcción de mapas de adyacencia. Se presenta un enfoque que permite ejecutar el algoritmo en \\(O(s \\log s)\\) tiempo, donde \\(s\\) es el tamaño de la expresión gráfica algebraica, utilizando solo la representación algebraica definida por la biblioteca alga."
+      ],
+      "ms": [
+        2630,
+        3186,
+        3289
+      ]
+    },
+    {
+      "id": "cmu2ng94x00vdjs38xq8aoo3m",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Performance Improvements in .NET 11",
+      "summaries": [
+        "No hay relación entre el contenido del artículo y el software o la tecnología. El texto es una reflexión sobre Christopher Guest y su película \"This Is Spinal Tap\", que no contiene información relevante para desarrolladores de software.",
+        "El artículo no contiene información técnica sobre .NET 11 ni sus mejoras de rendimiento. En su lugar, habla sobre Christopher Guest y la película \"This Is Spinal Tap\". No hay relación entre el contenido del artículo y el tema solicitado.",
+        "Lo siento, pero el texto no parece estar relacionado con la performance de .NET 11 o cualquier otro tema técnico relevante para desarrolladores de software. El artículo habla sobre Christopher Guest y su película \"This Is Spinal Tap\", lo cual no tiene ninguna conexión con el contenido del título o el resumen solicitado."
+      ],
+      "ms": [
+        1829,
+        1898,
+        2434
+      ]
+    },
+    {
+      "id": "cmu2ngake00vhjs38sfsbt38i",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Human Attacker Exploits Marimo RCE, Reaches SSH Bastion in Eight Seconds",
+      "summaries": [
+        "Un atacante humano explotó un agujero de seguridad en un dispositivo Marimo en solo ocho segundos, utilizando un toolkit personalizado escrito y depurado manualmente. Esto demuestra que los operadores expertos pueden moverse con la misma rapidez que las amenazas automatizadas, incluso mejorando su capacidad para evadir las detecciones de los defensores.",
+        "Un atacante humano explotó una vulnerabilidad en un dispositivo Marimo, alcanzando un bastión SSH en solo ocho segundos utilizando un toolkit Python personalizado. Esto demuestra que los atacantes con habilidades humanas pueden moverse tan rápido como los ataques automatizados, incluso mejorando la evasión de las defensas.",
+        "Un atacante humano explotó un agujero de seguridad en un dispositivo Marimo en solo ocho segundos, utilizando un toolkit Python personalizado. Esto demuestra que los expertos pueden moverse tan rápidamente como los ataques automatizados, incluso mejorando la evasión de las defensas."
+      ],
+      "ms": [
+        3017,
+        2610,
+        2349
+      ]
+    },
+    {
+      "id": "cmu2mdplm00v6js380mri0fx7",
+      "label": "factual",
+      "split": "iteration",
+      "title": "240,000 Hit by Data Breach at Japan’s Digital Agency",
+      "summaries": [
+        "Un agente digital japonés informó una brecha de datos que comprometió la información personal de aproximadamente 240,000 individuos. Los hackers accedieron a los archivos del Servicio de Soluciones gubernamentales (GSS) utilizando una cuenta de empleado de mantenimiento y operaciones. La vulnerabilidad en un producto VPN fue explotada para obtener el acceso al sistema.",
+        "El Japón Digital Agency informó que una brecha de datos afectó la información personal de aproximadamente 240,000 individuos. Hackers accedieron a los archivos del Servicio de Soluciones gubernamentales (GSS) utilizando una cuenta de empleado de mantenimiento y operaciones. La vulnerabilidad en un producto VPN fue explotada para el acceso al sistema.",
+        "El Japón Digital Agency informó una brecha de datos que comprometió la información personal de aproximadamente 240,000 individuos, incluyendo nombres, direcciones, correos electrónicos y números de teléfono, pero no identificaciones personales ni detalles financieros. El incidente ocurrió después de que hackers accedieran a archivos del Servicio de Soluciones gubernamentales (GSS) utilizando una cuenta de un empleado de mantenimiento y operaciones."
+      ],
+      "ms": [
+        3079,
+        2909,
+        3629
+      ]
+    },
+    {
+      "id": "cmu2ngatt00vljs38gulomnsw",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Attack Chains, Not Just Attack Surfaces: Why Testing Individual Techniques Misses the Point",
+      "summaries": [
+        "Los equipos de seguridad se centran en probar técnicas individuales, pero los atacantes inteligentes utilizan cadenas de ataques. Es crucial probar secuencias completas para detectar brechas en el proceso completo del ataque.",
+        "Según un reporte, los equipos de seguridad se centran en probar contra amenazas individuales (ataques superficiales), pero esto omite el problema real: los atacantes modernos utilizan cadenas de ataques. Una cadena podría comenzar con una phishing y continuar con la obtención de credenciales, luego privilegios elevados y finalmente la exfiltración de datos. Cualquier paso individual puede ser protegido, pero las cadenas complejas son lo que realmente importa para los atacantes inteligentes.",
+        "El artículo destaca que los equipos de seguridad se centran en probar técnicas individuales para detectar amenazas, pero esto no aborda el problema real: las cadenas de ataque, no solo superficies de ataque. Los atacantes modernos, especialmente aquellos impulsados por IA, utilizan una serie de técnicas juntas para comprometer sistemas. Por lo tanto, los métodos de prueba individuales pueden fallar porque faltan en la integración y la coherencia necesarias para proteger contra un ataque completo."
+      ],
+      "ms": [
+        2003,
+        4157,
+        4140
+      ]
+    },
+    {
+      "id": "cmu2lbbqn00uxjs38x71r1on5",
+      "label": "factual",
+      "split": "iteration",
+      "title": "IBM Built the Cold War’s Most Powerful Code Breaker for the NSA",
+      "summaries": [
+        "IBM construyó el código rompedor más poderoso de la Guerra Fría para el NSA. El Harvest (IBM 7950) era un superordenador que procesaba datos interceptados a 200 veces la velocidad de los demás computadoras de su época, operando desde la Crisis Cubana hasta los Acuerdos de Helsinki. Este sistema crucial para la inteligencia de señales durante décadas demostró el potencial de procesar grandes conjuntos de datos en tiempo real.",
+        "IBM construyó el código rompedor más poderoso de la Guerra Fría para el NSA. El superordenador Harvest procesaba datos a 200 veces la velocidad de los demás computadoras de su época, siendo crucial durante décadas para la inteligencia de señales del gobierno estadounidense.",
+        "IBM construyó el código rompedor más poderoso de la Guerra Fría para el NSA. El superordenador Harvest procesaba datos a 200 veces la velocidad de los computadores contemporáneos, siendo crucial durante décadas para la inteligencia de señales del gobierno estadounidense."
+      ],
+      "ms": [
+        3789,
+        2344,
+        2345
+      ]
+    },
+    {
+      "id": "cmu2lbcxi00uzjs38qd1akusv",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Apple Patches 200 Vulnerabilities With New iOS 27, macOS Golden Gate 27 Releases",
+      "summaries": [
+        "Apple lanzó iOS 27 y macOS Golden Gate 27 con parches para 200 vulnerabilidades, incluyendo 126 en iOS y 210 en macOS. Estos parches abordan problemas críticos como el kernel y buffer overflow, mejorando la seguridad tanto en dispositivos móviles como de escritorio.",
+        "Apple lanzó iOS 27 y macOS Golden Gate 27 con parches para 200 vulnerabilidades, incluyendo 126 en iOS y 210 en macOS. Los parches afectan a componentes críticos como el kernel y WebKit, mejorando la seguridad tanto en dispositivos móviles como de escritorio.",
+        "Apple lanzó iOS 27 y macOS Golden Gate 27 para corregir 200 vulnerabilidades, incluyendo 126 en iOS y 210 en macOS, con el objetivo de mejorar la seguridad de sus sistemas operativos."
+      ],
+      "ms": [
+        2815,
+        2788,
+        2084
+      ]
+    },
+    {
+      "id": "cmu2j67y400unjs38w1lv2jg7",
+      "label": "factual",
+      "split": "iteration",
+      "title": "How much of F-Droid is LLM generated?",
+      "summaries": [
+        "Un usuario observó un icono AI generado en F-Droid y preguntó cuánto del proyecto es creado por inteligencias artificiales. Como desarrollador de software, el autor reflexiona sobre la dificultad de encontrar código escrito por humanos y cuestiona si LLMs están desempeñando un papel creciente en el desarrollo de aplicaciones.",
+        "Según un reporte, el autor ha observado apps en F-Droid con iconos generados por IA, lo que le hace preguntarse cuánto de la plataforma es creado por inteligencia artificial. Como desarrollador de software, esto lo preocupa porque sugiere una posible pérdida de calidad y personalidad humana en el código fuente del proyecto.",
+        "Según un reporte, F-Droid puede estar usando software generado por inteligencia artificial (LLM) para crear íconos y otros elementos visuales, lo que ha sorprendido a los desarrolladores de aplicaciones gratuitas y de código abierto. Esto plantea preguntas sobre la calidad y la autenticidad del contenido en F-Droid."
+      ],
+      "ms": [
+        2981,
+        2725,
+        2691
+      ]
+    },
+    {
+      "id": "cmu2i3m4z00ugjs388i8t4r5f",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Microsoft AI Code of Conduct Sets Cyberattack Boundaries, Chain of Command, Safety Constraints",
+      "summaries": [
+        "Microsoft ha publicado un borrador de \"Código de Conducta para IA Humana\" que establece límites para las capacidades ofensivas de la IA, restringiendo el desarrollo y uso de código de ataque y técnicas evasivas. Las restricciones son absolutas y no pueden ser superadas por los usuarios finales o los empleadores.",
+        "Microsoft ha publicado un borrador del \"Código de Conducta para IA Humana\" para sus modelos MAI, estableciendo reglas de seguridad para capacidades cibernéticas ofensivas, límites en agentes AI autónomos y una rama dedicada para el seguimiento de la seguridad cibernética y otras usos especializados. El código prohíbe que los modelos produzcan código de explotación funcional, herramientas de ataque, métodos de planificación y enfoque, procedimientos de intrusión, técnicas de evasión, orientación operativa o cualquier otra ayuda que habilite o mejore un ataque cibernético.",
+        "Microsoft ha publicado un borrador de \"Código de Conducta para la IA Humana\" que establece límites en las capacidades ofensivas de la IA, restringiendo el desarrollo y uso de código malicioso y técnicas de ataque. El código impide que los modelos produzcan herramientas o métodos que faciliten ataques cibernéticos, manteniendo así una línea entre comprender y prepararse para un ataque y obtener las habilidades prácticas necesarias para llevarlo a cabo."
+      ],
+      "ms": [
+        2870,
+        5157,
+        3979
+      ]
+    },
+    {
+      "id": "cmu2h10ar00u3js38ni6z023v",
+      "label": "factual",
+      "split": "holdout",
+      "title": "CSS-Tricks in Limbo",
+      "summaries": [
+        "CSS-Tricks ha estado inactivo después de un breve periodo de actividad tras el regreso del editor principal. La situación es incierta debido a la falta de comunicación de parte de Digital Ocean, mientras que la empresa donó $3,000,000 USD a Omarchy, liderado por David Heinemeier Hansson, conocido por sus ideas racistas y políticas extrema-derecha.",
+        "CSS-Tricks ha estado inactivo de nuevo después de un año, su futuro es incierto debido a la falta de comunicación. La situación se complica con las controversias sobre el liderazgo de Omarchy por DHH, quien ha sido criticado por sus opiniones racistas.",
+        "CSS-Tricks ha estado inactivo de nuevo después de un año, con sus planes futuros inciertos. La situación se pone en contexto con las políticas y valores de Digital Ocean, que han donado a Omarchy, una iniciativa liderada por David Heinemeier Hansson, conocido por su infamy racista y político extremo."
+      ],
+      "ms": [
+        3173,
+        2137,
+        2617
+      ]
+    },
+    {
+      "id": "cmu2h11j100u5js38ourt7ku5",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Hacked HBO Max Reddit Account Used for Malware Delivery via ClickFix Attack",
+      "summaries": [
+        "Hackers comprometieron la cuenta oficial de HBO Max en Reddit y usaron el malware a través de una campaña publicitaria maliciosa con ClickFix. Durante 48 horas, distribuyeron 108 anuncios maliciosos en cinco grupos de trampa como parte del ataque PasteSwitch. Los usuarios que clickeaban en los anuncios eran redirigidos a una página falsa de HBO Max que contenía un botón para descargar malware, que incluía aplicaciones falsas y código malicioso para robar información personal y financiera.",
+        "Hackers comprometieron la cuenta oficial de HBO Max en Reddit y usaronla para una campanía de publicidad maliciosa que llevó a un sitio web de ClickFix. Durante 48 horas, los atacantes pusieron 108 anuncios maliciosos en cinco grupos de engaño como parte del campamento PasteSwitch. El objetivo era promover una aplicación nativa de macOS para HBO Max inexistente, que llevaba a usuarios a un sitio falso que contaba con un botón de descarga. Al hacer clic en el botón, los visitantes se vieron obligados a ejecutar comandos maliciosos que transferían la ejecución del navegador a una utilidad confiable bajo el control del usuario, permitiendo así el robo de información personal y financiera.",
+        "Hackers comprometieron la cuenta oficial de HBO Max en Reddit y usaron el sitio para una campanía de malpublicidad que llevó a un landing page de ClickFix. Durante 48 horas, los atacantes pusieron 108 publicidades maliciosas en cinco grupos de engaño como parte de la campaña PasteSwitch. Los usuarios que clickearon las publicidades fueron redirigidos a una página falsa que contenía un botón para descargar malware, que incluía aplicaciones falsas y código malicioso para robar información personal y datos financieros."
+      ],
+      "ms": [
+        4371,
+        5948,
+        4402
+      ]
+    },
+    {
+      "id": "cmu2fyfk300twjs38cxqevo8g",
+      "label": "factual",
+      "split": "holdout",
+      "title": "The terminal should not own the work",
+      "summaries": [
+        "El artículo argumenta que un terminal no debería poseer la tarea, ya que esto puede causar problemas como la pérdida de datos si se cierra el terminal o se pierde el registro de la ejecución. Vincent sugiere mover la propiedad a un demonio en segundo plano que gestiona el estado de las tareas, la ejecución del flujo de trabajo, procesos agente, programación y otras funcionalidades. Esta arquitectura permite que múltiples clientes interactúen con el mismo daemon sin competir por la escritura, lo que mejora la durabilidad y la capacidad de escalado.",
+        "El artículo argumenta que los terminales no deberían tener la propiedad del trabajo, ya que pueden ser cerrados accidentalmente o perder información valiosa. Vincent sugiere mover la propiedad del trabajo a un demonio en segundo plano, lo que permite que múltiples clientes interactúen con el mismo estado sin conflictos y que la tarea siga ejecutándose incluso cuando los terminales se cierran.",
+        "El artículo argumenta que los terminales no deberían poseer la información sobre las tareas en ejecución, ya que esto puede llevar a problemas como la pérdida de datos si se cierra el terminal o se pierde el historial de comandos. Vincent sugiere mover la propiedad del estado de la tarea y la gestión del flujo de trabajo a un demonio en segundo plano, lo que permite que múltiples clientes interactúen con el sistema sin conflictos y que la información persista incluso cuando no hay interfaz gráfica abierta."
+      ],
+      "ms": [
+        4538,
+        2945,
+        4028
+      ]
+    },
+    {
+      "id": "cmu2fyge000tyjs38qy42aaw4",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Microsoft confirms KB5002914 Excel update breaks copy and paste",
+      "summaries": [
+        "Microsoft ha confirmado que la actualización KB5002914 del mes de septiembre está causando problemas con el copiar y pegar en Excel, afectando a versiones desde 2024 hasta 2016. Los usuarios experimentan fallas silenciosas en operaciones como copiar y pegar, autofill y arrastrar fórmulas, aunque no reciben mensajes de error.",
+        "Microsoft ha confirmado que la actualización KB5002914 del mes de septiembre está causando problemas con el copiar y pegar en Excel, afectando a versiones desde 2024 hasta 2016. Los usuarios experimentan fallas silenciosas en estas funciones básicas, sin indicaciones visibles.",
+        "Microsoft ha confirmado que el actualización KB5002914 del mes de septiembre está causando problemas con la copia y pegada en Excel, afectando a las versiones 2024, 2021, 2019 y 2016. Los usuarios experimentan fallas silenciosas en estas funciones básicas, sin indicación de error."
+      ],
+      "ms": [
+        3343,
+        2637,
+        3040
+      ]
+    },
+    {
+      "id": "cmu2i3kwi00uajs38swncozbn",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Alternatives to MinIO for single-node local S3",
+      "summaries": [
+        "S3Proxy y RustFS son alternativas a MinIO para S3 local. S3Proxy es fácil de configurar y usar, aunque depende de jclouds retirado. RustFS tiene una mala vulnerabilidad segura reciente y problemas con enlaces.",
+        "S3Proxy y RustFS son alternativas a MinIO para S3 local. S3Proxy es fácil de configurar y usar, mientras que RustFS tiene un problema de seguridad reciente pero también es fácil de reemplazar.",
+        "S3Proxy y RustFS son alternativas a MinIO para S3 local. S3Proxy es fácil de configurar y usar, mientras que RustFS tiene una mala reputación por un reciente fallo de seguridad."
+      ],
+      "ms": [
+        2125,
+        1732,
+        1724
+      ]
+    },
+    {
+      "id": "cmu2i3l9900uejs38u1eiljvh",
+      "label": "factual",
+      "split": "holdout",
+      "title": "The k-server conjecture is true",
+      "summaries": [
+        "El k-server conjetura ha sido demostrada verdadera, lo que significa que un algoritmo en línea determinista puede alcanzar un ratio competitivo de k en todos los espacios métricos. La demostración utiliza una representación algebraica natural de la función de trabajo como una matriz, donde las operaciones mínima y adición corresponden a la adición y multiplicación de expresiones formales, respectivamente.",
+        "Se ha demostrado la conjetura k-server, que establece que un algoritmo en línea determinista puede lograr un factor de competitividad k en todos los espacios métricos. La prueba utiliza una representación algebraica natural de la función de trabajo como una matriz, que codifica todas las rutas posibles para alcanzar una configuración.",
+        "Se ha demostrado la conjetura k-server, que establece que un algoritmo determinista en línea puede lograr una proporción competitiva k en todos los espacios métricos. El trabajo functiono satisface esta conjetura mediante una representación algebraica natural de la función como una matriz, que codifica todas las rutas posibles para alcanzar una configuración."
+      ],
+      "ms": [
+        3293,
+        2682,
+        2947
+      ]
+    },
+    {
+      "id": "cmu2dtagd00tkjs38fmsuyv9g",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Cisco patches Secure Email Gateway zero-day exploited in attacks",
+      "summaries": [
+        "Cisco ha advertido a los clientes de parchear un grave fallo de seguridad cero-día en su Secure Email Gateway, que ha sido explotado por actores maliciosos. El problema afecta tanto a las aplicaciones virtuales como físicas y puede permitir a atacantes remotos ejecutar comandos arbitrarios con privilegios de root.",
+        "Cisco ha advertido a sus clientes sobre un grave fallo de seguridad cero-día en su Secure Email Gateway que ha sido explotado por actores maliciosos. El problema, descubierto en el análisis de correos electrónicos del software AsyncOS de Cisco, permite a atacantes remotos ejecutar comandos arbitrarios con privilegios de root en el sistema operativo subyacente.",
+        "Cisco ha lanzado parches para un grave fallo de seguridad en su Secure Email Gateway que ha sido explotado por actores malintencionados. El problema, descubierto en el análisis de correos electrónicos del software AsyncOS de Cisco, permite a los atacantes remotos ejecutar comandos arbitrarios con privilegios de root en el sistema operativo subyacente."
+      ],
+      "ms": [
+        2788,
+        3066,
+        2947
+      ]
+    }
+  ]
+}

@@ -120,9 +120,25 @@ A few problems worth reading about in the commit history:
   overshoots the 45-word limit in 6 of 10 summaries, where `gemma4` overshoots in 1 of 10. The two metrics
   are not independent: condensing is exactly what drops the hedge, so a 51-word summary has room for the
   *"according to a report"* that a 40-word one cuts. That biases the comparison toward the longer model.
-  `gemma4` stays for now and the open question is written down rather than buried: tighten qwen's length in
-  the prompt and measure whether the attribution survives. Per-model numbers in
-  [`evals/MODELS.md`](evals/MODELS.md).
+  Per-model numbers in [`evals/MODELS.md`](evals/MODELS.md); the follow-up experiment is below.
+- **The follow-up experiment, including the arm that failed.** To separate "better model" from "more verbose
+  model", the length limit was tightened through the prompt in two arms — one that just enforces the 45 words,
+  one that also says what to cut first (detail yes, attribution never) — and compared paired, case by case,
+  since every arm ran the same 40 cases. Three results, in
+  [`evals/EXPERIMENT-length.md`](evals/EXPERIMENT-length.md):
+  (1) **Condensing really does cost attribution.** Forcing `gemma4` from 39.8 to 35.3 words dropped it
+  **-10.0 pts ± 9.6**, the only effect in the experiment that clears its own noise band.
+  (2) **But that is not what separates the models.** Within `gemma4`, length explains nothing on its own
+  (73.6% for summaries under the limit against 71.4% for those over it), and at matched length
+  `qwen2.5-coder:7b` still leads 88.9% to 73.6%.
+  (3) **The arm meant to settle it could not run.** Told to enforce the limit, `qwen2.5-coder:7b` wrote
+  *longer* (51.4 → 55.5 words) and complied less. The manipulation failed, so its attribution under that arm
+  says nothing — and a model that cannot be held to a length limit is disqualified for this use case anyway,
+  independently of the question being asked.
+  The usable outcome is the cheap one: on `gemma4`, enforcing the limit **and** naming what to sacrifice gives
+  shorter summaries (35.7 words), near-total length compliance (97.5% against 90.0%) and no measurable
+  attribution cost (+1.7 pts ± 5.8). That is a prompt change, not a model change, and it is a candidate for
+  production rather than something already shipped.
 - **Fixing the model's own flaw in the prompt, not by swapping models.** `gemma4` stated an ongoing
   investigation as established fact. The prompt now requires it to keep the source's degree of certainty,
   which is what the eval above measures; swapping models per request was rejected separately (15-30 s reload

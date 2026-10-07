@@ -1,0 +1,689 @@
+{
+  "at": "2026-10-07T21:56:40.631Z",
+  "model": "gemma4:latest",
+  "repeats": 3,
+  "promptVariant": "hard-length",
+  "prompt": "Eres un asistente que resume artículos técnicos para un desarrollador.\nDevuelve SOLO el resumen, sin preámbulo, en español, en 1–2 frases y MÁXIMO 45 PALABRAS. El límite es estricto: cuenta las palabras de tu borrador y, si se pasa, reescríbelo más corto antes de responder.\nEnfócate en el \"qué pasó\" y el \"por qué importa para quien construye software\".\nNo inventes datos que no estén en el texto.\nConserva el grado de certeza del original. Si el texto marca duda o atribución —\"according to\", \"reportedly\", \"allegedly\", \"suspected\", \"alleged\", \"linked to\", \"appears to\", \"may have\", \"likely\", \"is investigating\"— el resumen DEBE conservar esa marca: usa \"según un reporte…\", \"se investiga si…\", \"presunto…\", \"habría…\" o \"estaría vinculado a…\". Nunca presentes como hecho probado algo que el original no afirma, aunque te quede más corto.",
+  "durationMs": 307789,
+  "latency": {
+    "meanMs": 2565,
+    "medianMs": 2458,
+    "p90Ms": 2804,
+    "minMs": 1407,
+    "maxMs": 15311
+  },
+  "overall": {
+    "n": 120,
+    "nAttributed": 60,
+    "nFactual": 60,
+    "attributionRate": 0.6333333333333333,
+    "falseHedgeRate": 0,
+    "lengthCompliance": 0.9916666666666667,
+    "preambleRate": 0,
+    "avgWords": 35.31666666666667
+  },
+  "bySplit": {
+    "iteration": {
+      "n": 72,
+      "nAttributed": 36,
+      "nFactual": 36,
+      "attributionRate": 0.6666666666666666,
+      "falseHedgeRate": 0,
+      "lengthCompliance": 1,
+      "preambleRate": 0,
+      "avgWords": 35.25
+    },
+    "holdout": {
+      "n": 48,
+      "nAttributed": 24,
+      "nFactual": 24,
+      "attributionRate": 0.5833333333333334,
+      "falseHedgeRate": 0,
+      "lengthCompliance": 0.9791666666666666,
+      "preambleRate": 0,
+      "avgWords": 35.416666666666664
+    }
+  },
+  "runs": [
+    {
+      "id": "cmu2oj3qp00vwjs38npwjv7bf",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "OpenAI Investigates Report Linking AI Agents to RubyGems Attack",
+      "summaries": [
+        "Se investiga si agentes de OpenAI atacaron RubyGems, buscando robar claves API explotando vulnerabilidades. Esto permitió la ejecución remota de código y el *scraping* de datos de sitios gubernamentales.",
+        "Se investiga si agentes de OpenAI atacaron RubyGems, buscando robar claves API explotando vulnerabilidades. Esto permitió la ejecución remota de código y el *scraping* de datos, lo que es relevante para la seguridad de ecosistemas de paquetes.",
+        "Se investiga si agentes de OpenAI atacaron RubyGems en mayo, buscando robar claves API explotando vulnerabilidades. Esto permitió la ejecución remota de código y el *scraping* de información de sitios web."
+      ],
+      "ms": [
+        15311,
+        2503,
+        2176
+      ]
+    },
+    {
+      "id": "cmu2k8qkd00uqjs38abo0xjwv",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Suspected sabotage causes major Netherlands rail disruption",
+      "summaries": [
+        "Se reporta una gran interrupción ferroviaria en Países Bajos por presunto sabotaje de vías, con materiales colocados intencionalmente. Esto afecta servicios clave como Schiphol, por lo que los desarrolladores deben considerar fallos de infraestructura física.",
+        "Se reporta una gran interrupción ferroviaria en Países Bajos por presunto sabotaje en las vías, con materiales colocados intencionalmente. Esto afecta servicios clave como Schiphol, por lo que los desarrolladores deben considerar la resiliencia ante fallos de infraestructura física.",
+        "Se reporta una gran interrupción ferroviaria en Países Bajos por presunto sabotaje en vías, con materiales colocados intencionalmente. Esto afecta rutas clave como Schiphol, lo que implica posibles fallos en el transporte y requiere atención en la infraestructura."
+      ],
+      "ms": [
+        2595,
+        2792,
+        2637
+      ]
+    },
+    {
+      "id": "cmu2i3m7z00uijs38rp88xeyx",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Suspected Black Axe gang leaders face cybercrime charges in the US",
+      "summaries": [
+        "Cinco líderes presuntos de la banda Black Axe fueron extraditados a EE. UU. por fraude y lavado de dinero. Coordinaron estafas en línea usando perfiles falsos y VoIP, lo que advierte sobre tácticas sofisticadas de fraude financiero transnacional.",
+        "Cinco líderes presuntos de la banda Black Axe fueron extraditados a EE. UU. por fraude y lavado de dinero. Coordinaron estafas en línea (desde 2011-2021) usando perfiles falsos y tácticas de manipulación, lo cual es relevante para entender vectores de ataque de fraude financiero.",
+        "Cinco líderes presuntos de la banda Black Axe fueron extraditados a EE. UU. por fraude y lavado de dinero. Coordinaron estafas en línea usando perfiles falsos y VoIP, lo que es relevante para entender vectores de ataque de fraude financiero."
+      ],
+      "ms": [
+        2736,
+        3250,
+        2547
+      ]
+    },
+    {
+      "id": "cmu1q8j9700qujs38xdwgh7py",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Japan's Digital Agency says VPN flaw exposed 246,000 personnel records",
+      "summaries": [
+        "Una agencia japonesa detectó una brecha de datos que pudo exponer registros de 246,000 empleados gubernamentales, explotando vulnerabilidades en un dispositivo VPN. Esto subraya la criticidad de asegurar dispositivos de acceso remoto para prevenir filtraciones de datos sensibles.",
+        "Una agencia japonesa detectó una brecha que pudo exponer 246,000 registros de empleados gubernamentales por una vulnerabilidad en un VPN. Esto importa porque expone la necesidad de asegurar endpoints de acceso remoto, aunque se desconoce el producto afectado.",
+        "Una agencia japonesa detectó una brecha que pudo exponer 246,000 registros de empleados gubernamentales por explotar una vulnerabilidad en un VPN. Esto subraya la criticidad de asegurar dispositivos de acceso remoto para prevenir filtraciones de datos sensibles."
+      ],
+      "ms": [
+        2731,
+        2537,
+        2589
+      ]
+    },
+    {
+      "id": "cmu0u333j00hijs38s6d8y6m5",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Fable 5.1 Solves the \"Cyphral Distich\" (370 year old cipher)",
+      "summaries": [
+        "Fable 5.1 resolvió el Cyphral Distich, un cifrado sin resolver por siglos. Esto es relevante porque demuestra que modelos avanzados pueden superar métodos criptográficos complejos que han eludido a expertos humanos.",
+        "Fable 5.1 resolvió el Cyphral Distich, un cifrado sin resolver durante siglos. Esto es importante porque demuestra la capacidad de IA para resolver criptogramas complejos que superan métodos criptográficos humanos tradicionales.",
+        "Fable 5.1 resolvió el Cyphral Distich, un cifrado sin resolver por siglos. Esto es importante porque demuestra que modelos avanzados pueden superar métodos criptográficos complejos que han eludido a expertos humanos."
+      ],
+      "ms": [
+        2334,
+        2226,
+        2181
+      ]
+    },
+    {
+      "id": "cmu016uz20085js38c4x17h3i",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Hackers exploit Tencent app flaw to deploy GrayRabbit malware",
+      "summaries": [
+        "Actores de amenaza explotan una vulnerabilidad RCE en Sogou Input Method de Tencent para desplegar el malware GrayRabbit. Esto es crítico porque permite la ejecución remota con un simple clic, afectando a usuarios de Windows.",
+        "Actores vinculados explotan una vulnerabilidad RCE en Sogou Input Method (Tencent) para desplegar el malware GrayRabbit. Esto importa porque permite la ejecución remota con un simple clic al hacer clic en un enlace malicioso.",
+        "Actores vinculados explotan una vulnerabilidad RCE en Sogou Input Method de Tencent para desplegar el malware GrayRabbit. Esto es crítico porque permite la ejecución remota con un simple clic al manipular URI personalizados."
+      ],
+      "ms": [
+        2317,
+        2314,
+        2117
+      ]
+    },
+    {
+      "id": "cmu016i3u006rjs38owbbif93",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "US Customs supervisor busted for stealing hardware from Homeland Security PCs",
+      "summaries": [
+        "Un supervisor de Aduanas fue arrestado por robar hardware de PCs del Departamento de Seguridad Nacional. Esto es relevante porque muestra cómo el acceso físico, incluso con restricciones, puede ser explotado para el robo de componentes.",
+        "Un supervisor de Aduanas fue arrestado por robar hardware de 46 PCs del Departamento de Seguridad Nacional. Esto es relevante porque demuestra cómo el acceso físico, incluso con restricciones documentadas, puede ser explotado para el robo de componentes.",
+        "Un supervisor de Aduanas fue arrestado por robar hardware de 46 PCs del Departamento de Seguridad Nacional. Esto es relevante porque muestra cómo el personal con acceso limitado puede cometer fraude al intercambiar componentes robados por crédito en tiendas."
+      ],
+      "ms": [
+        2192,
+        2309,
+        2352
+      ]
+    },
+    {
+      "id": "cmu015r8t0051js38l13kpoov",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "'Fingerprints' inside the Sun could reveal if it once swallowed a planet",
+      "summaries": [
+        "Un estudio sugiere que la ingestión de un planeta tipo super-Tierra podría haber dejado una firma química detectable en el interior solar. Esto es relevante porque podría explicar discrepancias entre modelos solares estándar y observaciones actuales.",
+        "Un estudio sugiere que la ingestión de un planeta tipo super-Tierra podría haber dejado una \"huella\" química detectable en el interior solar. Esto podría ayudar a explicar discrepancias entre modelos solares estándar y observaciones actuales.",
+        "Un estudio sugiere que la ingestión de un planeta tipo super-Tierra podría haber dejado una \"huella\" química detectable en el interior solar. Esto podría ayudar a explicar discrepancias entre modelos solares y observaciones actuales, lo cual es relevante para entender la evolución estelar."
+      ],
+      "ms": [
+        2196,
+        2201,
+        2626
+      ]
+    },
+    {
+      "id": "cmu016vqd008hjs38qarpgels",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "OpenAI Agents Linked to RubyGems Campaign That Gained RCE on RubyDoc Servers",
+      "summaries": [
+        "Investigadores reportan que agentes de OpenAI estuvieron vinculados a un ataque a RubyGems, usando cientos de gemas basura. Esto es relevante porque muestra un patrón de ataque sofisticado en la cadena de suministro de software.",
+        "Investigadores reportan que agentes de OpenAI estuvieron vinculados a un ataque a RubyGems, usando cientos de gemas para exfiltrar datos públicos. Esto es importante porque sugiere un vector de ataque avanzado en la cadena de suministro de software.",
+        "Investigadores reportan que agentes de OpenAI orquestaron un ataque a RubyGems, creando gemas basura para exfiltrar datos públicos. Esto es relevante porque muestra un riesgo de ataque sofisticado en la cadena de suministro de software."
+      ],
+      "ms": [
+        2246,
+        2341,
+        2325
+      ]
+    },
+    {
+      "id": "cmu016yxp00a7js38n2ou9p6g",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "PaperCut Attacker Uses Hundreds of AI Agents to Compromise 440+ Instances",
+      "summaries": [
+        "Un actor sospechoso usó IA para explotar vulnerabilidades de PaperCut (CVE-2026-81578 y CVE-2026-82078), afectando más de 440 instancias. Esto importa porque expone un riesgo de acceso inicial mediante bypass de autenticación y RCE.",
+        "Un actor sospechoso usó IA para explotar vulnerabilidades de PaperCut (CVE-2026-81578 y CVE-2026-82078), apuntando al sector educativo. Esto es relevante porque expone un vector de ataque de acceso inicial mediante bypass de autenticación y RCE.",
+        "Un actor sospechoso usó IA para explotar fallos en PaperCut (CVE-2026-81578 y CVE-2026-82078), apuntando al sector educativo. Esto es relevante porque expone vulnerabilidades críticas de autenticación y RCE que deben parchearse."
+      ],
+      "ms": [
+        3344,
+        3226,
+        3211
+      ]
+    },
+    {
+      "id": "cmu0172fn00bfjs38eb6owa8m",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Slim Spider Steals Crypto Custody Secrets From Brazilian Financial Institution",
+      "summaries": [
+        "Un actor de amenaza llamado Slim Spider ataca instituciones financieras brasileñas, mostrando conocimiento profundo de infraestructura como Pix y activos cripto. Utiliza scripts Bash para robar credenciales temporales de la nube, afectando secretos financieros.",
+        "Un actor de amenazas, llamado Slim Spider, ataca infraestructura financiera brasileña, apuntando a criptoactivos. Utiliza scripts Bash para robar credenciales temporales de metadatos en la nube, lo que es clave para comprometer secretos digitales.",
+        "Un actor de amenaza, llamado Slim Spider, está atacando instituciones financieras brasileñas, apuntando a criptoactivos. Utilizan scripts Bash para robar credenciales temporales de la nube, lo que implica riesgos de seguridad en la gestión de secretos."
+      ],
+      "ms": [
+        2289,
+        2491,
+        2468
+      ]
+    },
+    {
+      "id": "cmu016uii0081js38czgx1z59",
+      "label": "attributed",
+      "split": "iteration",
+      "title": "Two Alleged ‘TeamPCP’ Hackers Arrested in Australia",
+      "summaries": [
+        "Arrestaron a dos sospechosos vinculados a TeamPCP, un grupo que supuestamente inyectó código malicioso en software de código abierto. Esto es relevante porque indica un riesgo persistente de ataques a la cadena de suministro mediante dependencias de desarrollo.",
+        "Arrestaron a dos individuos sospechosos de pertenecer a TeamPCP, un grupo criminal ligado a ataques de cadena de suministro. Esto es relevante porque el grupo inyectaba código malicioso en software *open source* para extorsionar negocios globales.",
+        "Arrestaron a dos hombres en Australia, presuntos miembros de TeamPCP, grupo ligado a ataques de cadena de suministro. Esto es relevante porque el grupo inyectaba código malicioso en software *open source* para extorsionar negocios globales."
+      ],
+      "ms": [
+        2669,
+        2497,
+        2458
+      ]
+    },
+    {
+      "id": "cmsswaoga04fijsog8aafzntr",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "Shell investigates 'potential incident' after Clop data theft claims",
+      "summaries": [
+        "Shell investiga un posible incidente tras la reclamación de Clop de haber robado 89GB de datos, incluyendo planos y reportes. Esto es relevante porque el ataque explotó una vulnerabilidad de validación de entrada (CVE-2026-12569) en instancias PTC Windchill y FlexPLM.",
+        "Shell investiga un posible incidente tras el reclamo de Clop de haber robado 89GB de datos, incluyendo planos y reportes. Esto es relevante porque el ataque explotó una vulnerabilidad de validación de entrada (CVE-2026-12569) en instancias PTC Windchill y FlexPLM.",
+        "Shell investiga un posible incidente tras el reclamo de Clop de haber robado 89GB de datos, incluyendo planos y reportes. Esto es relevante porque el ataque explotó una vulnerabilidad de validación de entrada (CVE-2026-12569) en instancias PTC Windchill/FlexPLM."
+      ],
+      "ms": [
+        3259,
+        3182,
+        3239
+      ]
+    },
+    {
+      "id": "cmsswaodk04fgjsog0u9wbfy7",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "Trivy, Not LiteLLM Behind the 2,500 Org Compromise",
+      "summaries": [
+        "Según SOCRadar, la mayoría de las 2,500 organizaciones afectadas por el ataque a LiteLLM fueron en realidad víctimas de Trivy. Esto implica que el código malicioso se ejecutó al obtener paquetes, robando secretos de desarrolladores.",
+        "Según SOCRadar, la mayoría de las 2,500 organizaciones afectadas por el ataque a LiteLLM fueron expuestas previamente por un compromiso de Trivy. Esto implica que los ataques de TeamPCP ejecutaban código malicioso al obtener paquetes, robando secretos.",
+        "Según SOCRadar, la mayoría de las 2,500 organizaciones afectadas por el ataque a LiteLLM fueron en realidad víctimas de un compromiso previo de Trivy. Esto implica que los atacantes explotaron vulnerabilidades en escáneres y paquetes para robar secretos automáticamente."
+      ],
+      "ms": [
+        2499,
+        2602,
+        2704
+      ]
+    },
+    {
+      "id": "cmsst2xla04epjsog8dy7bu9e",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "1.6 Million Likely Impacted by RingCentral Data Breach",
+      "summaries": [
+        "Datos de 1.6 millones de usuarios de RingCentral parecen robados por un grupo de extorsión tras una campaña de ingeniería social. Esto importa porque, aunque la plataforma no se vio afectada, los desarrolladores deben considerar brechas de datos de terceros.",
+        "A 1.6 millones de usuarios parece haberles robado información personal de RingCentral vía ingeniería social. Esto importa porque, aunque la plataforma no se vio afectada, el incidente expuso datos sensibles de clientes.",
+        "A 1.6 millones de usuarios parece haberles robado información personal mediante ingeniería social. Para desarrolladores, esto implica revisar la seguridad de la gestión de datos y la respuesta a brechas de terceros."
+      ],
+      "ms": [
+        2545,
+        2052,
+        2019
+      ]
+    },
+    {
+      "id": "cmsph1xd703qvjsoggsxbkrlo",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "New Bedford police officer accused of using Flock cameras to track ex-partner",
+      "summaries": [
+        "Un oficial de policía es acusado de usar cámaras Flock para rastrear a su ex-pareja, lo que implica una investigación interna y la suspensión de su licencia. Esto es relevante porque sugiere un abuso de herramientas de vigilancia policial.",
+        "Un oficial de policía es acusado de usar cámaras Flock para rastrear a su expareja, lo que ha provocado una investigación interna y la suspensión de su licencia de armas. Esto es relevante porque afecta la seguridad y el uso de tecnología de vigilancia en el ámbito policial.",
+        "Una oficial de policía es acusada de usar cámaras Flock para seguir a su expareja, lo que resultó en una investigación interna y suspensión de su licencia. Esto es relevante porque indica un posible uso indebido de tecnología de vigilancia policial."
+      ],
+      "ms": [
+        2251,
+        2570,
+        2270
+      ]
+    },
+    {
+      "id": "cmsp0z96e03nqjsog8m8g9u97",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "Delta probes Wi-Fi deauth attack on flight carrying DEF CON attendees",
+      "summaries": [
+        "Delta investiga un ataque Wi-Fi deautenticación en un vuelo con asistentes a DEF CON. Esto implica que usuarios podrían haber interrumpido la red de la aeronave, lo cual es relevante por posibles vulnerabilidades de conectividad en entornos aéreos.",
+        "Delta investiga un ataque Wi-Fi deautenticación en un vuelo con asistentes a DEF CON. Esto implica que pasajeros podrían haber interrumpido la red inalámbrica, lo que es relevante para entender vulnerabilidades de conectividad en entornos aéreos.",
+        "Delta investiga un ataque Wi-Fi deautenticación en un vuelo con asistentes a DEF CON. Esto implica que pasajeros podrían haber interrumpido la red inalámbrica, lo cual es relevante para entender vulnerabilidades de conectividad a bordo."
+      ],
+      "ms": [
+        2553,
+        2401,
+        2286
+      ]
+    },
+    {
+      "id": "cmsoujsuw03lyjsogv5am7wbd",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "Wesco confirms security incident after ExfilSquad claims data theft",
+      "summaries": [
+        "Wesco confirma investigar un incidente de seguridad tras el reclamo de ExfilSquad sobre exfiltración de datos de su CRM en la nube. La empresa asegura no haber riesgo para datos sensibles ni interrupción operativa.",
+        "Wesco investiga una supuesta exfiltración de datos de su entorno CRM en la nube tras la reclamación de ExfilSquad. La empresa afirma no haber riesgo para datos sensibles ni interrupciones operativas.",
+        "Wesco investiga una supuesta exfiltración de datos de su entorno CRM en la nube tras la reclamación de ExfilSquad. La empresa asegura no haber riesgo para datos sensibles ni interrupción operativa."
+      ],
+      "ms": [
+        2132,
+        2109,
+        2054
+      ]
+    },
+    {
+      "id": "cmson1g4i03jhjsog0zcm1pee",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "OpenAI's Only Ethicist Reportedly Left Last Month",
+      "summaries": [
+        "La jefa de ética de OpenAI, Chloé Bakalar, dejó la compañía en julio, siendo la única ética dedicada. Esto deja a OpenAI sin un experto en ética, lo cual es notable dado su perfil en desarrollo ético de IA.",
+        "La jefa de ética de OpenAI, Chloé Bakalar, dejó la compañía en julio, siendo la única ética dedicada. Esto implica que OpenAI podría estar sin un experto ético dedicado actualmente.",
+        "La jefa de ética de OpenAI, Chloé Bakalar, dejó la compañía en julio, siendo la única ética dedicada. Esto deja a OpenAI sin un experto en ética, lo cual es relevante para el desarrollo responsable de IA."
+      ],
+      "ms": [
+        2377,
+        1885,
+        2182
+      ]
+    },
+    {
+      "id": "cmsnje90v03d8jsogd2711mjh",
+      "label": "attributed",
+      "split": "holdout",
+      "title": "China-Linked Hackers Deploy New StormEncryptor Ransomware, Likely via N-central Flaw",
+      "summaries": [
+        "Hackers vinculados a China desplegaron StormEncryptor, un ransomware que usa C++ y afecta archivos. Podría explotar CVE-2026-18577 en N-central, permitiendo el bypass de parches y la toma de cuentas.",
+        "Hackers vinculados a China desplegaron StormEncryptor, un ransomware que usa C++ y afecta archivos. Podría explotar CVE-2026-18577 en N-central, permitiendo la toma de cuentas y requiriendo atención inmediata para mitigación.",
+        "Hackers vinculados a China desplegaron StormEncryptor, un ransomware que podría explotar la falla CVE-2026-18577 en N-central. Esto implica un riesgo de acceso inicial y toma de cuentas que debe parchearse urgentemente."
+      ],
+      "ms": [
+        2723,
+        2772,
+        2641
+      ]
+    },
+    {
+      "id": "cmu2plov600w5js38z03cipab",
+      "label": "factual",
+      "split": "iteration",
+      "title": "“But NOLOCK won’t hurt me if I’m using an index!”",
+      "summaries": [
+        "Usar `NOLOCK` sigue siendo peligroso incluso con índices, ya que puede causar lecturas de datos inconsistentes. El artículo demuestra que la seguridad no está garantizada solo por usar *index seeks*, advirtiendo sobre la lectura de datos transaccionalmente incorrectos.",
+        "Usar `NOLOCK` sigue siendo peligroso incluso con índices, ya que puede causar lecturas de datos inconsistentes. El artículo demuestra que las transacciones concurrentes pueden corromper datos leídos con `NOLOCK` sin importar la indexación.",
+        "Usar `NOLOCK` sigue siendo riesgoso incluso con índices, ya que puede permitir lecturas de datos inconsistentes. El artículo demuestra que las transacciones concurrentes pueden corromper datos leídos con `NOLOCK`, independientemente de la indexación."
+      ],
+      "ms": [
+        2754,
+        2517,
+        2628
+      ]
+    },
+    {
+      "id": "cmu2plo6n00w1js38qm1n38r5",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Java 27 Released",
+      "summaries": [
+        "JDK 27 está disponible para producción, incluyendo JEPs clave como Concurrencia Estructurada y G1 como recolector por defecto. Esto importa porque ofrece mejoras fundamentales para el desarrollo moderno en Java.",
+        "JDK 27 ya está disponible para producción, incluyendo JEPs clave como Concurrencia Estructurada y G1 como recolector por defecto. Esto importa porque ofrece mejoras fundamentales para el desarrollo moderno en Java.",
+        "JDK 27 ya está disponible para producción, incluyendo mejoras clave como G1 como recolector por defecto y Soporte para Concurrencia Estructurada. Esto permite a los desarrolladores adoptar características modernas y mejoras de rendimiento en sus aplicaciones Java."
+      ],
+      "ms": [
+        2210,
+        2129,
+        2392
+      ]
+    },
+    {
+      "id": "cmu2plnmu00vzjs38glm76akl",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Show HN: An e-ink frame that hears birds and draws them as 1800s illustrations",
+      "summaries": [
+        "Este proyecto usa audio y IA local (BirdNET-Go) para detectar aves y dibujarlas como ilustraciones del siglo XIX en un marco e-ink. Es útil para construir demos de detección ambiental en tiempo real.",
+        "Este proyecto usa audio y IA local (BirdNET-Go) para detectar aves y dibujarlas en ilustraciones de época en un marco e-ink. Importa para desarrolladores por su arquitectura de detección en tiempo real y actualización parcial de contenido.",
+        "Este proyecto usa detección de aves por audio (BirdNET-Go) para dibujar ilustraciones de especies detectadas en un marco e-ink. Importa para desarrolladores ya que ofrece una solución local de IA para visualización de datos en tiempo real."
+      ],
+      "ms": [
+        2166,
+        2337,
+        2417
+      ]
+    },
+    {
+      "id": "cmu2oitwr00vqjs38czoee4ok",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Postgres development activity",
+      "summaries": [
+        "El artículo analiza las estadísticas de actividad de desarrollo de Postgres, enfocándose en la lista de correo `pgsql-hackers` y el repositorio Git. Esto permite cuantificar la evolución del proyecto, siendo la lista de correo el canal principal de comunicación.",
+        "El artículo analiza la actividad de desarrollo de Postgres, enfocándose en la lista de correo `pgsql-hackers` y el repositorio Git. Esto cuantifica la evolución del proyecto, siendo la lista de correo el canal principal de comunicación para enviar parches.",
+        "El artículo analiza la actividad de desarrollo de Postgres, enfocándose en la lista de correo `pgsql-hackers` y el repositorio Git. Importa para desarrolladores entender la cuantificación de cambios históricos en el proyecto."
+      ],
+      "ms": [
+        2431,
+        2384,
+        2104
+      ]
+    },
+    {
+      "id": "cmu2ng8y000v9js3868k1xih8",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Search over Algebraic Graphs",
+      "summaries": [
+        "Se propone ejecutar algoritmos como Dijkstra directamente sobre la representación algebraica del grafo (`alga`), evitando la conversión previa a un mapa de adyacencia. Esto permite ejecutar el algoritmo en $O(s \\log s)$ tiempo, mejorando la eficiencia de la implementación.",
+        "Se presenta un método para ejecutar Dijkstra sobre la representación algebraica de grafos (`alga`) sin convertirla previamente a un mapa de adyacencia. Esto permite ejecutar el algoritmo en $O(s \\log s)$, mejorando la eficiencia al trabajar directamente con la estructura algebraica.",
+        "Se presenta un método para ejecutar algoritmos como Dijkstra directamente sobre la representación algebraica de grafos (`alga`), sin convertirla previamente a un mapa de adyacencia. Esto permite una ejecución en $O(s \\log s)$, mejorando la eficiencia al trabajar con la estructura nativa."
+      ],
+      "ms": [
+        2652,
+        2634,
+        2799
+      ]
+    },
+    {
+      "id": "cmu2ng94x00vdjs38xq8aoo3m",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Performance Improvements in .NET 11",
+      "summaries": [
+        "El texto no contiene información técnica sobre .NET 11. Se centra en analizar la comedia y la influencia de la película *This Is Spinal Tap*, sin relevancia para el desarrollo de software.",
+        "El artículo no trata sobre .NET 11. Por lo tanto, no se puede generar un resumen técnico relevante para un desarrollador.",
+        "El texto no trata sobre rendimiento en .NET 11. Es una reflexión sobre la comedia mockumentary, usando la película *This Is Spinal Tap* como ejemplo cultural."
+      ],
+      "ms": [
+        2016,
+        1407,
+        1841
+      ]
+    },
+    {
+      "id": "cmu2ngake00vhjs38sfsbt38i",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Human Attacker Exploits Marimo RCE, Reaches SSH Bastion in Eight Seconds",
+      "summaries": [
+        "Un atacante humano explotó CVE-2026-39987 en Marimo, alcanzando un *SSH bastion* en ocho segundos sin IA. Esto indica que atacantes expertos pueden igualar o superar la velocidad de ataques asistidos por IA, mejorando la evasión de defensas.",
+        "Un atacante humano explotó la vulnerabilidad Marimo (CVE-2026-39987) y alcanzó un host SSH en ocho segundos usando herramientas personalizadas. Esto demuestra que los atacantes cualificados pueden igualar o superar la velocidad de los ataques asistidos por IA.",
+        "Un atacante humano explotó CVE-2026-39987 en Marimo, alcanzando un *bastion* SSH en ocho segundos usando herramientas manuales. Esto indica que los atacantes expertos pueden igualar o superar la velocidad de ataques asistidos por IA."
+      ],
+      "ms": [
+        3073,
+        2832,
+        2749
+      ]
+    },
+    {
+      "id": "cmu2mdplm00v6js380mri0fx7",
+      "label": "factual",
+      "split": "iteration",
+      "title": "240,000 Hit by Data Breach at Japan’s Digital Agency",
+      "summaries": [
+        "La Agencia Digital de Japón sufrió una brecha de datos afectando a 240,000 personas por una vulnerabilidad en un VPN. Esto expuso nombres, correos y teléfonos de usuarios y funcionarios, lo que implica riesgo de exposición de datos sensibles.",
+        "La Agencia Digital de Japón sufrió una brecha de datos que expuso información de 240,000 personas por una vulnerabilidad en un VPN. Esto afecta a usuarios y personal, lo que implica riesgos de seguridad de datos sensibles.",
+        "La Agencia Digital de Japón sufrió una brecha de datos que expuso información de 240,000 personas por una vulnerabilidad de VPN. Esto importa porque expuso nombres, emails y teléfonos de usuarios y funcionarios, aunque no datos financieros."
+      ],
+      "ms": [
+        2682,
+        2360,
+        2460
+      ]
+    },
+    {
+      "id": "cmu2ngatt00vljs38gulomnsw",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Attack Chains, Not Just Attack Surfaces: Why Testing Individual Techniques Misses the Point",
+      "summaries": [
+        "Las pruebas de seguridad aisladas fallan porque los atacantes enlazan técnicas (cadenas de ataque). Es crucial evaluar la secuencia completa, ya que un control puede fallar en el enlace que permite explotar toda la cadena.",
+        "Las pruebas de seguridad aisladas fallan porque los atacantes enlazan técnicas (cadenas de ataque). Es crucial probar la secuencia completa, ya que un control puede fallar en el eslabón débil de la cadena, permitiendo la explotación total.",
+        "Probar técnicas de seguridad aisladas es insuficiente porque los atacantes enlazan múltiples pasos. Es crucial evaluar la cadena completa de ataque, ya que fallar en un eslabón puede permitir la explotación total, independientemente de controles individuales."
+      ],
+      "ms": [
+        2335,
+        2461,
+        2317
+      ]
+    },
+    {
+      "id": "cmu2lbbqn00uxjs38x71r1on5",
+      "label": "factual",
+      "split": "iteration",
+      "title": "IBM Built the Cold War’s Most Powerful Code Breaker for the NSA",
+      "summaries": [
+        "IBM construyó Harvest, un procesador criptográfico avanzado para la NSA. Este sistema fue pionero en procesar enormes flujos de datos, siendo precursor de los sistemas actuales para el manejo de *streaming* de datos.",
+        "IBM construyó Harvest, un procesador criptográfico clave para la NSA durante la Guerra Fría. Esto es relevante porque fue pionero en procesar enormes flujos de datos, precursor de sistemas actuales de *streaming*.",
+        "IBM construyó Harvest, un procesador criptográfico clave para la NSA durante la Guerra Fría. Esto es relevante porque fue uno de los primeros sistemas diseñados para procesar enormes flujos de datos en tiempo real, precursor de los *stream processors* actuales."
+      ],
+      "ms": [
+        2223,
+        2090,
+        2481
+      ]
+    },
+    {
+      "id": "cmu2lbcxi00uzjs38qd1akusv",
+      "label": "factual",
+      "split": "iteration",
+      "title": "Apple Patches 200 Vulnerabilities With New iOS 27, macOS Golden Gate 27 Releases",
+      "summaries": [
+        "Apple parcheó más de 200 vulnerabilidades en iOS 27 y macOS Golden Gate 27. Esto importa porque corrige fallos críticos en el kernel y componentes clave, afectando tanto sistemas móviles como de escritorio.",
+        "iOS 27 y macOS Golden Gate 27 parchean más de 200 vulnerabilidades, incluyendo fallos de kernel. Esto es clave para desarrolladores, ya que corrigen fallos en componentes centrales como WebKit y Sandbox.",
+        "Apple lanzó iOS 27 y macOS Golden Gate 27 parchando más de 200 vulnerabilidades, incluyendo fallos de kernel. Esto es importante porque corrige múltiples componentes clave (WebKit, Sandbox) y afecta tanto a móvil como a escritorio."
+      ],
+      "ms": [
+        2321,
+        2533,
+        2463
+      ]
+    },
+    {
+      "id": "cmu2j67y400unjs38w1lv2jg7",
+      "label": "factual",
+      "split": "iteration",
+      "title": "How much of F-Droid is LLM generated?",
+      "summaries": [
+        "El autor cuestiona la proporción de contenido generado por IA en F-Droid. Esto es relevante porque el estado actual del desarrollo de software y la autoría de código en plataformas FOSS son temas de interés para desarrolladores.",
+        "El autor cuestiona la proporción de contenido generado por IA en F-Droid. Esto es relevante porque plantea dudas sobre la autenticidad del código disponible, afectando la confianza en el software de código abierto.",
+        "El autor cuestiona la proporción de código generado por IA en F-Droid. Esto es relevante porque plantea la preocupación sobre la autenticidad del software disponible para desarrolladores."
+      ],
+      "ms": [
+        2243,
+        2092,
+        1737
+      ]
+    },
+    {
+      "id": "cmu2i3m4z00ugjs388i8t4r5f",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Microsoft AI Code of Conduct Sets Cyberattack Boundaries, Chain of Command, Safety Constraints",
+      "summaries": [
+        "Microsoft estableció un Código de Conducta que prohíbe a sus modelos generar código de explotación o asistencia para ciberataques. Esto importa porque impone restricciones absolutas que ni usuarios ni implementadores pueden anular, limitando el uso ofensivo.",
+        "Microsoft estableció un Código de Conducta que prohíbe a sus modelos generar código de explotación o asistencia para ciberataques. Esto es crucial porque impone restricciones absolutas que ni usuarios ni implementadores pueden anular.",
+        "Microsoft estableció un Código de Conducta que prohíbe a sus modelos generar código de explotación o asistencia para ciberataques, independientemente de la solicitud. Esto importa porque impone restricciones absolutas que ni usuarios ni implementadores pueden anular."
+      ],
+      "ms": [
+        2549,
+        2222,
+        2419
+      ]
+    },
+    {
+      "id": "cmu2h10ar00u3js38ni6z023v",
+      "label": "factual",
+      "split": "holdout",
+      "title": "CSS-Tricks in Limbo",
+      "summaries": [
+        "CSS-Tricks está inactivo tras la adquisición por Digital Ocean, cuya gestión parece incierta. Esto es relevante porque la continuidad del contenido técnico y la documentación de CSS-Tricks son cruciales para el desarrollo web.",
+        "CSS-Tricks está inactivo tras la adquisición por Digital Ocean, cuya gestión parece incierta. Esto importa porque la falta de comunicación sobre su futuro afecta el acceso a recursos clave para el desarrollo web.",
+        "CSS-Tricks está inactivo tras su adquisición por Digital Ocean, y su futuro es incierto sin comunicación. Esto es relevante porque la estabilidad de recursos clave de desarrollo depende de la gestión corporativa."
+      ],
+      "ms": [
+        2220,
+        1956,
+        1960
+      ]
+    },
+    {
+      "id": "cmu2h11j100u5js38ourt7ku5",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Hacked HBO Max Reddit Account Used for Malware Delivery via ClickFix Attack",
+      "summaries": [
+        "Hackearon la cuenta oficial de HBO Max en Reddit para desplegar malware vía anuncios maliciosos. Esto es clave porque los atacantes forzaron a los usuarios a ejecutar comandos en Terminal, robando credenciales y datos en macOS/Windows.",
+        "Hackearon la cuenta oficial de HBO Max en Reddit para distribuir malware vía anuncios maliciosos. Esto es importante porque los usuarios podían ejecutar comandos en Terminal, permitiendo la exfiltración de credenciales y datos sensibles en macOS y Windows.",
+        "Hackearon la cuenta de HBO Max en Reddit para distribuir malware mediante anuncios maliciosos. Esto expone a los usuarios a sitios falsos que ejecutan comandos en Terminal, robando credenciales y datos en macOS/Windows."
+      ],
+      "ms": [
+        2488,
+        2308,
+        2285
+      ]
+    },
+    {
+      "id": "cmu2fyfk300twjs38cxqevo8g",
+      "label": "factual",
+      "split": "holdout",
+      "title": "The terminal should not own the work",
+      "summaries": [
+        "El estado de tareas complejas no debe residir en la terminal, ya que es frágil. Mover la gestión a un demonio en segundo plano centraliza el estado, permitiendo que la interfaz de usuario (TUI/CLI/API) sean solo clientes, asegurando durabilidad al cerrar cualquier cliente.",
+        "El estado de tareas debe residir en un *daemon* de fondo, no en la terminal, ya que esta última es frágil. Esto permite que la TUI, CLI y API sean clientes de un estado centralizado, asegurando la durabilidad del trabajo independientemente de la interfaz usada.",
+        "El estado de tareas complejas no debe residir en la terminal, pues es frágil. Mover la gestión a un *daemon* centralizado permite que la TUI, CLI y API sean solo clientes, garantizando durabilidad y persistencia del trabajo sin depender de la sesión activa."
+      ],
+      "ms": [
+        3064,
+        2804,
+        2798
+      ]
+    },
+    {
+      "id": "cmu2fyge000tyjs38qy42aaw4",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Microsoft confirms KB5002914 Excel update breaks copy and paste",
+      "summaries": [
+        "La actualización KB5002914 de Excel rompe silenciosamente la función de copiar y pegar. Esto afecta a versiones 2016-2024; desinstalar el parche restaura la funcionalidad, lo cual es importante para la estabilidad de las aplicaciones.",
+        "La actualización KB5002914 de Office rompe la funcionalidad de copiar y pegar en Excel (2016-2024) sin notificar fallos. Se recomienda desinstalar el parche para restaurar la funcionalidad, mientras Microsoft investiga la solución.",
+        "La actualización KB5002914 de Office rompe la función de copiar y pegar en Excel (2016-2024) sin notificar al usuario. Se recomienda desinstalar el parche para restaurar la funcionalidad, mientras Microsoft investiga la solución."
+      ],
+      "ms": [
+        2803,
+        2715,
+        2787
+      ]
+    },
+    {
+      "id": "cmu2i3kwi00uajs38swncozbn",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Alternatives to MinIO for single-node local S3",
+      "summaries": [
+        "S3Proxy y RustFS son alternativas a MinIO para S3 local. S3Proxy parece fácil de implementar, mientras que RustFS presenta vulnerabilidades de seguridad recientes que deben considerarse al elegir un reemplazo.",
+        "S3Proxy y RustFS son alternativas a MinIO para S3 local de nodo único. S3Proxy es fácil de configurar y ligero, mientras que RustFS es otra opción, aunque se debe considerar una vulnerabilidad de seguridad reciente.",
+        "S3Proxy y RustFS son alternativas a MinIO para S3 local de nodo único. S3Proxy es fácil de usar, aunque usa una librería que podría retirarse. RustFS también es una opción, pero se reportó una vulnerabilidad de seguridad reciente."
+      ],
+      "ms": [
+        2204,
+        2250,
+        2534
+      ]
+    },
+    {
+      "id": "cmu2i3l9900uejs38u1eiljvh",
+      "label": "factual",
+      "split": "holdout",
+      "title": "The k-server conjecture is true",
+      "summaries": [
+        "Se demuestra la conjetura del $k$-servidor, confirmando que un algoritmo determinístico alcanza una razón competitiva $k$ en cualquier espacio métrico. Esto es relevante porque valida un límite teórico para algoritmos en línea.",
+        "Se prueba la conjetura del $k$-servidor, demostrando que el algoritmo *work function* logra una razón competitiva $k$ en cualquier espacio métrico. Esto implica una mejora teórica para el diseño de algoritmos en línea.",
+        "Se demuestra la conjetura del $k$-servidor, estableciendo que un algoritmo determinístico logra una razón competitiva $k$ en cualquier espacio métrico. Esto es importante porque valida un límite teórico clave para el diseño de algoritmos en línea."
+      ],
+      "ms": [
+        2349,
+        2381,
+        2463
+      ]
+    },
+    {
+      "id": "cmu2dtagd00tkjs38fmsuyv9g",
+      "label": "factual",
+      "split": "holdout",
+      "title": "Cisco patches Secure Email Gateway zero-day exploited in attacks",
+      "summaries": [
+        "Cisco emitió una alerta por una vulnerabilidad de día cero en su Secure Email Gateway (CVE-2026-76461). Permite a atacantes remotos ejecutar comandos con privilegios *root* mediante correos maliciosos con sentencias SQL.",
+        "Cisco advierte sobre una vulnerabilidad de día cero en su Secure Email Gateway (CVE-2026-76461) explotada activamente. Permite a atacantes remotos ejecutar comandos con privilegios root mediante correos maliciosos con sentencias SQL.",
+        "Cisco emitió una alerta por una vulnerabilidad de día cero en su Secure Email Gateway (CVE-2026-76461). Los atacantes pueden ejecutar comandos remotos con privilegios root enviando correos maliciosos, requiriendo un parche urgente."
+      ],
+      "ms": [
+        2803,
+        2741,
+        2739
+      ]
+    }
+  ]
+}

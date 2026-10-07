@@ -9,8 +9,8 @@
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { SUMMARY_SYSTEM_PROMPT } from '../ai/provider/prompt';
 import { Label, aggregate, scoreOne } from './scorer';
+import { DEFAULT_VARIANT, resolveVariant } from './variants';
 
 interface Case {
   id: string;
@@ -32,6 +32,10 @@ const PROD_MODEL = 'gemma4:latest';
 const MODEL = process.env.EVAL_MODEL ?? PROD_MODEL;
 const BASE_URL = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434';
 const REPEATS = Number(process.env.EVAL_REPEATS ?? 3);
+// Variante de prompt (ver variants.ts). `prod` es el prompt real; las demas
+// existen para el experimento de longitud vs atribucion.
+const VARIANT = resolveVariant(process.env.EVAL_PROMPT ?? DEFAULT_VARIANT);
+const PROMPT = VARIANT.prompt;
 const ROOT = join(process.cwd(), '..', '..');
 
 async function summarize(title: string, text: string): Promise<{ text: string; ms: number }> {
@@ -47,7 +51,7 @@ async function summarize(title: string, text: string): Promise<{ text: string; m
       think: false,
       options: { temperature: 0.3, num_predict: 200 },
       messages: [
-        { role: 'system', content: SUMMARY_SYSTEM_PROMPT },
+        { role: 'system', content: PROMPT },
         { role: 'user', content: `Título: ${title}\n\nArtículo:\n${text}` },
       ],
     }),
@@ -63,7 +67,8 @@ async function main() {
     .split('\n')
     .map((l) => JSON.parse(l) as Case);
 
-  console.log(`modelo: ${MODEL} · casos: ${cases.length} · repeticiones: ${REPEATS}`);
+  console.log(`modelo: ${MODEL} · variante: ${VARIANT.id} · casos: ${cases.length} · repeticiones: ${REPEATS}`);
+  if (VARIANT.id !== DEFAULT_VARIANT) console.log(`  (${VARIANT.tests})`);
   const started = Date.now();
   const runs: { id: string; label: Label; split: string; title: string; summaries: string[]; ms: number[] }[] = [];
 
@@ -102,7 +107,8 @@ async function main() {
     at: new Date().toISOString(),
     model: MODEL,
     repeats: REPEATS,
-    prompt: SUMMARY_SYSTEM_PROMPT,
+    promptVariant: VARIANT.id,
+    prompt: PROMPT,
     durationMs: Date.now() - started,
     latency,
     overall,
@@ -112,13 +118,14 @@ async function main() {
 
   // fecha y hora: dos corridas del mismo modelo el mismo dia no se pisan
   const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
-  const name = `${stamp}-${MODEL.replace(/[^a-z0-9.]+/gi, '-')}.json`;
+  const slug = MODEL.replace(/[^a-z0-9.]+/gi, '-');
+  const name = VARIANT.id === DEFAULT_VARIANT ? `${stamp}-${slug}.json` : `${stamp}-${slug}--${VARIANT.id}.json`;
   writeFileSync(join(ROOT, 'evals', 'runs', name), JSON.stringify(snapshot, null, 2));
-  if (MODEL === PROD_MODEL) {
+  if (MODEL === PROD_MODEL && VARIANT.id === DEFAULT_VARIANT) {
     writeFileSync(join(ROOT, 'evals', 'runs', 'latest.json'), JSON.stringify(snapshot, null, 2));
   } else {
     console.log(`
-(${MODEL} no es el modelo de produccion: no se toca latest.json)`);
+(no es la combinacion de produccion [${PROD_MODEL} + ${DEFAULT_VARIANT}]: no se toca latest.json)`);
   }
 
   const pct = (x: number) => `${(x * 100).toFixed(1)}%`;

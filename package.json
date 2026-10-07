@@ -23,7 +23,8 @@
     "eval:run": "cd apps/api && tsx src/evals/run.ts",
     "eval:check": "tsx apps/api/src/evals/check.ts",
     "eval:report": "cd apps/api && tsx src/evals/report.ts",
-    "eval:compare": "cd apps/api && tsx src/evals/compare.ts"
+    "eval:compare": "cd apps/api && tsx src/evals/compare.ts",
+    "eval:experiment": "cd apps/api && tsx src/evals/experiment.ts"
   },
   "prisma": {
     "schema": "prisma/schema.prisma",
