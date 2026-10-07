@@ -26,3 +26,31 @@ jobs:
 
       - name: Test
         run: pnpm --filter api test
+
+  # Puerta de calidad del TL;DR. No llama al modelo (GitHub Actions no tiene
+  # Ollama): re-puntúa el último snapshot de evals/runs/ con el scorer y falla
+  # si la calidad baja de los umbrales. El snapshot se regenera en local con
+  # `pnpm eval:run`. Ver evals/README.md.
+  eval-quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Prisma client (lo necesita el import del scorer)
+        run: pnpm prisma:generate
+
+      - name: Scorer unit tests
+        run: pnpm --filter api test -- src/evals
+
+      - name: Quality gate sobre el último snapshot
+        run: pnpm eval:check

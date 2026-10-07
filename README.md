@@ -117,6 +117,57 @@ A few problems worth reading about in the commit history:
 - **Local models that "think".** Hybrid-reasoning models can spend the whole token budget thinking and return
   empty content; summaries send `think: false`, with a retry for servers that do not support it.
 
+## Evaluating the summaries
+
+The summarizer had a specific failure: it turned claims into facts. Given a text saying
+*"was the work of OpenAI agents, **according to a new report**"*, it produced
+*"OpenAI agents **orchestrated** an attack"*. Fixing that in the prompt is easy; knowing whether the fix
+actually worked, and whether it broke something else, is not. So there is an eval harness.
+
+**What it measures.** Every case is hand-labelled into one of two classes, and they pull in opposite directions:
+
+| Label | Meaning | Expected behaviour |
+|---|---|---|
+| `attributed` | The central claim is **not** confirmed (ongoing investigation, suspicion, tentative attribution) | Keep the hedge: *"according to…"*, *"is being investigated"* |
+| `factual` | Confirmed fact (official announcement, published patch, technical content) | State it plainly, no hedging |
+
+The second class exists to catch the obvious side effect of fixing the first: a model that starts
+sprinkling "allegedly" over things that are actually confirmed.
+
+**How many cases.** 40 real articles from the app's own database (Hacker News, SecurityWeek,
+BleepingComputer, Lobsters), 20 per class, each generated **3 times** because the model runs at
+`temperature 0.3` and is not deterministic — **120 observations** per run. The set is split 60/40 into
+`iteration` (used to tune the prompt) and `holdout` (never looked at while tuning).
+
+**Results** (`gemma4:latest`, see [`evals/REPORT.md`](evals/REPORT.md)):
+
+| Metric | Overall | Holdout |
+|---|---|---|
+| Attribution preserved | **73.3%** | 83.3% |
+| Undue hedging on confirmed facts | **0.0%** | 0.0% |
+| Within the 45-word limit | 90.0% | — |
+
+The honest reading: the prompt fix helps but is **not solved**. An earlier ad-hoc A/B over 6 cases
+suggested 100%; with 40 cases and repetitions it is 73%. The small eval was overfitting to the cases used
+to write the fix — which is exactly why the holdout split and the repetitions exist. The remaining failures
+share a pattern: the uncertainty lives in a modifier (*"alleged* leaders", *"linked to"*, *"appears to"*)
+rather than in a reporting verb, and the model drops it while condensing.
+
+**How it runs in CI.** GitHub Actions has no access to a local LLM, so the harness is split:
+
+| Stage | Where | Command |
+|---|---|---|
+| Generation | Local machine, with Ollama | `pnpm eval:run` |
+| Verification | **CI, on every push** | `pnpm eval:check` |
+
+`eval:run` imports the **real prompt from the source** (not a copy) and writes a versioned snapshot to
+`evals/runs/`. `eval:check` calls no model: it re-scores that snapshot with a deterministic rule-based
+scorer and **fails the build** if quality drops below the thresholds. That catches two regressions — someone
+degrading the prompt, or someone loosening the scorer. The scorer has its own unit tests, which also run in CI.
+
+Thresholds are **non-regression gates** calibrated below the measured baseline, not quality targets.
+Methodology and limitations: [`evals/README.md`](evals/README.md).
+
 ## Quick start
 
 ```bash
